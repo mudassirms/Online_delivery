@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Default for Android emulator: use 10.0.2.2 to reach your host machine.
+
 // If testing on a real phone replace with PC's LAN IP e.g. http://192.168.1.50:8000
 export const API_BASE = 'http://10.54.10.246:8000';
 
