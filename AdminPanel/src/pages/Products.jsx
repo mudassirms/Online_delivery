@@ -11,7 +11,7 @@ export default function Products() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
 
-  // Fetch current user info (role, etc.)
+  // Fetch current user info
   const fetchUser = async () => {
     try {
       const res = await api.get("/auth/me");
@@ -28,6 +28,7 @@ export default function Products() {
     }
   };
 
+  // Fetch products for a store
   const fetchProducts = async (storeId) => {
     if (!storeId) return;
     try {
@@ -46,6 +47,7 @@ export default function Products() {
     if (selectedStore) fetchProducts(selectedStore);
   }, [selectedStore]);
 
+  // Delete product
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure to delete this product?")) return;
     try {
@@ -56,6 +58,7 @@ export default function Products() {
     }
   };
 
+  // Toggle availability
   const toggleAvailability = async (id, current) => {
     try {
       await api.patch(`/catalog/products/${id}`, { available: !current });
@@ -107,7 +110,7 @@ export default function Products() {
             <th className="p-2">ID</th>
             <th className="p-2">Name</th>
             <th className="p-2">Price</th>
-            <th className="p-2">Available</th>
+            <th className="p-2 text-center">Available</th>
             <th className="p-2">Actions</th>
           </tr>
         </thead>
@@ -117,15 +120,21 @@ export default function Products() {
               <td className="p-2">{p.id}</td>
               <td className="p-2">{p.name}</td>
               <td className="p-2">₹{p.price}</td>
-              <td className="p-2">
-                <label className="inline-flex relative items-center cursor-pointer">
+              <td className="p-2 text-center">
+                <label className="inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
                     className="sr-only peer"
                     checked={p.available}
                     onChange={() => toggleAvailability(p.id, p.available)}
                   />
-                  <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
+                  <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 relative transition-all">
+                    <span
+                      className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 ease-in-out ${
+                        p.available ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    ></span>
+                  </div>
                   <span className="ml-3 text-sm font-medium text-gray-700">
                     {p.available ? "Available" : "Unavailable"}
                   </span>

@@ -18,45 +18,51 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   // Fetch dashboard data and categories
-  useEffect(() => {
-    const fetchData = async () => {
-      const token = localStorage.getItem("admin_token");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
+useEffect(() => {
+  const fetchData = async () => {
+    console.log("Fetching dashboard data..."); // <== add this
 
+    const token = localStorage.getItem("admin_token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      // Fetch admin's stores
+      const storeRes = await api.get("/catalog/stores/my");
+      console.log("Stores:", storeRes.data);
+
+      // Fetch stats if available
+      let totalOrders = 0;
+      let totalProducts = 0;
       try {
-        // Fetch admin's stores
-        const storeRes = await api.get("/catalog/stores/my");
+        const statsRes = await api.get("/catalog/stats");
+        totalOrders = statsRes?.data?.totalOrders || 0;
+        totalProducts = statsRes?.data?.totalProducts || 0;
+      } catch {}
 
-        // Fetch stats if available
-        let totalOrders = 0;
-        let totalProducts = 0;
-        try {
-          const statsRes = await api.get("/stats");
-          totalOrders = statsRes?.data?.totalOrders || 0;
-          totalProducts = statsRes?.data?.totalProducts || 0;
-        } catch {}
+      // Fetch categories for creating store
+      const categoriesRes = await api.get("/catalog/categories");
+      console.log("Categories API Response:", categoriesRes.data);
 
-        // Fetch categories for creating store
-        const categoriesRes = await api.get("/catalog/categories");
-        setCategories(categoriesRes.data);
+      setCategories(categoriesRes.data);
 
-        setStats({
-          stores: storeRes.data,
-          totalOrders,
-          totalProducts,
-        });
-      } catch (e) {
-        console.warn("Error fetching dashboard data:", e);
-        if (e.response?.status === 401) navigate("/login");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [navigate]);
+      setStats({
+        stores: storeRes.data,
+        totalOrders,
+        totalProducts,
+      });
+    } catch (e) {
+      console.warn("Error fetching dashboard data:", e);
+      if (e.response?.status === 401) navigate("/login");
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchData();
+}, [navigate]);
+
 
   const handleAddStore = async () => {
     if (!storeName || !categoryId) {

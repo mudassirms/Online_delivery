@@ -4,15 +4,23 @@ import { useCart } from '../context/CartContext';
 import api from '../services/api';
 
 export default function CheckoutScreen({ navigation }) {
-  const { cart, setCart, fetchCart, total } = useCart(); // ✅ use setCart and fetchCart
+  const { cart, setCart, fetchCart, total } = useCart();
   const [address, setAddress] = useState('123, Main Street, Town');
   const [loading, setLoading] = useState(false);
 
   const placeOrder = async () => {
-    if (!cart.length) return Alert.alert('Cart empty');
+    if (!cart.length) return Alert.alert('Cart empty', 'Add items before checkout.');
 
     setLoading(true);
     try {
+      // Get store_id from the first cart item
+      const storeId = cart[0]?.product?.store_id;
+      if (!storeId) {
+        Alert.alert('Error', 'Store information missing for cart items.');
+        setLoading(false);
+        return;
+      }
+
       // 1️⃣ Create address
       const resAddress = await api.post('/catalog/addresses', {
         address_line: address,
@@ -22,15 +30,18 @@ export default function CheckoutScreen({ navigation }) {
       });
       const addressId = resAddress.data.id;
 
-      // 2️⃣ Place the order (backend clears cart automatically)
-      const resOrder = await api.post('/catalog/orders', { address_id: addressId });
+      // 2️⃣ Place the order
+      const resOrder = await api.post('/catalog/orders', {
+        address_id: addressId,
+        store_id: storeId,
+      });
 
-      // 3️⃣ Clear local cart state to avoid 404 errors
+      // 3️⃣ Clear local cart
       setCart([]);
-      fetchCart(); // optionally refresh cart from backend
+      fetchCart();
 
       Alert.alert('Order placed', `Order #${resOrder.data.id} placed successfully`);
-      navigation.navigate('Orders'); // navigate to orders screen
+      navigation.navigate('Orders');
     } catch (e) {
       console.log('Place order error:', e.response?.data || e.message);
       Alert.alert('Error', 'Please log in or try again.');

@@ -86,6 +86,7 @@ function AppNavigator() {
       <Stack.Screen name="Products" component={ProductListScreen} options={{ title: 'Products' }} />
       <Stack.Screen name="ProductDetail" component={ProductDetailsScreen} options={{ title: 'Details' }} />
       <Stack.Screen name="Checkout" component={CheckoutScreen} options={{ title: 'Checkout' }} />
+      <Stack.Screen name="Orders" component={OrdersScreen} options={{ title: 'My Orders' }} />
     </Stack.Navigator>
   );
 }

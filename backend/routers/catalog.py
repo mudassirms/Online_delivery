@@ -1,31 +1,60 @@
 # catalog.py
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session, selectinload
 from typing import List
 from backend import models, schemas
 from backend.database import get_db
 from backend.auth import get_current_user  
 from backend.models import User
+from typing import Dict
 
 router = APIRouter(prefix="/catalog", tags=["Catalog"])
 
 # -------------------
 # Categories
 # -------------------
+@router.get("/stats", response_model=Dict[str, int])
+def get_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Return dashboard statistics based on user role."""
+
+    # Default values
+    total_orders = 0
+    total_products = 0
+
+    if current_user.role == "admin":
+        # Admin: count only their store products and orders
+        store_ids = [
+            store.id
+            for store in db.query(models.Store).filter(models.Store.owner_id == current_user.id).all()
+        ]
+        if store_ids:
+            total_products = db.query(models.Product).filter(models.Product.store_id.in_(store_ids)).count()
+            total_orders = db.query(models.Order).filter(models.Order.store_id.in_(store_ids)).count()
+    else:
+        # Normal user: count their own orders
+        total_orders = db.query(models.Order).filter(models.Order.user_id == current_user.id).count()
+
+    return {"totalOrders": total_orders, "totalProducts": total_products}
 
 @router.get("/categories", response_model=List[schemas.CategoryOut])
 def get_categories(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if current_user.role == "admin":
-        # Admin: only categories that have their stores
+    if current_user.role == "admin": 
         stores = db.query(models.Store).filter(models.Store.owner_id == current_user.id).all()
-        category_ids = list(set(store.category_id for store in stores))
-        categories = db.query(models.Category).filter(models.Category.id.in_(category_ids)).all()
+        if stores:
+            category_ids = list(set(store.category_id for store in stores))
+            categories = db.query(models.Category).filter(models.Category.id.in_(category_ids)).all()
+        else:
+        # ✅ If no stores yet, return all categories
+            categories = db.query(models.Category).all()
     else:
-        # Regular user: all categories
         categories = db.query(models.Category).all()
+
 
     return categories
 
@@ -152,10 +181,21 @@ def get_products_by_store(
     if current_user.role == "admin" and store.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to access this store")
 
-    products = store.products
+    # Query products explicitly from DB
+    query = db.query(models.Product).filter(models.Product.store_id == store_id)
+
     if q:
-        products = [p for p in products if q.lower() in p.name.lower()]
+        query = query.filter(models.Product.name.ilike(f"%{q}%"))
+
+    products = query.all()
+
+    # Ensure all products have 'available' as boolean
+    for p in products:
+        if p.available is None:
+            p.available = False
+
     return products
+
 
 
 @router.post("/products", response_model=schemas.ProductOut)
@@ -212,52 +252,28 @@ def update_product(
     db.refresh(db_product)
     return db_product
 
-
-# -------------------
-# Cart
-# -------------------
-
-@router.post("/cart", response_model=schemas.CartOut)
-def add_to_cart(
-    cart_data: schemas.CartCreate,
+@router.patch("/products/{product_id}", response_model=schemas.ProductOut)
+def patch_product(
+    product_id: int,
+    data: dict = Body(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    product = db.query(models.Product).filter(models.Product.id == cart_data.product_id).first()
-    if not product:
+    db_product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    if not db_product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    cart_item = models.Cart(
-        user_id=current_user.id,
-        product_id=cart_data.product_id,
-        quantity=cart_data.quantity
-    )
-    db.add(cart_item)
+    store = db.query(models.Store).filter(models.Store.id == db_product.store_id).first()
+    if store.owner_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to update this product")
+
+    for key, value in data.items():
+        if hasattr(db_product, key):
+            setattr(db_product, key, value)
+
     db.commit()
-    db.refresh(cart_item)
-    return db.query(models.Cart).options(selectinload(models.Cart.product)).filter(models.Cart.id == cart_item.id).first()
-
-
-@router.get("/cart", response_model=List[schemas.CartOut])
-def get_cart(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    return db.query(models.Cart).options(selectinload(models.Cart.product)).filter(models.Cart.user_id == current_user.id).all()
-
-
-@router.delete("/cart/{cart_id}")
-def remove_from_cart(
-    cart_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    cart_item = db.query(models.Cart).filter(models.Cart.id == cart_id, models.Cart.user_id == current_user.id).first()
-    if not cart_item:
-        raise HTTPException(status_code=404, detail="Cart item not found")
-    db.delete(cart_item)
-    db.commit()
-    return {"message": "Item removed"}
+    db.refresh(db_product)
+    return db_product
 
 
 # -------------------
@@ -279,6 +295,9 @@ def add_to_cart(
         user_id=current_user.id, 
         product_id=cart_data.product_id
     ).first()
+    if not product.store_id:
+        raise HTTPException(status_code=400, detail="Product does not belong to a store")
+
 
     if cart_item:
         # If exists, update quantity
@@ -337,12 +356,15 @@ def create_order(
 
     total_price = sum(item.product.price * item.quantity for item in cart_items)
 
+    store_id = cart_items[0].product.store_id
+
     # Create order
     order = models.Order(
         user_id=current_user.id,
         address_id=order_data.address_id,
         total_price=total_price,
-        status="pending"
+        status="pending",
+        store_id=store_id
     )
     db.add(order)
     db.commit()
@@ -371,12 +393,29 @@ def create_order(
     ).filter(models.Order.id == order.id).first()
 
 
+from fastapi import HTTPException
+
 @router.get("/orders", response_model=List[schemas.OrderOut])
 def get_orders(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user)
 ):
-    return db.query(models.Order).options(selectinload(models.Order.items).selectinload(models.OrderItem.product)).filter(models.Order.user_id == current_user.id).all()
+    query = db.query(models.Order).options(
+        selectinload(models.Order.items).selectinload(models.OrderItem.product),
+        selectinload(models.Order.user)
+    )
+
+    if current_user.role == "admin":
+        # get store IDs owned by this admin
+        store_ids = [store.id for store in db.query(models.Store).filter(models.Store.owner_id == current_user.id).all()]
+        if not store_ids:
+            return []  # admin owns no stores
+        query = query.filter(models.Order.store_id.in_(store_ids))
+    else:
+        # normal user
+        query = query.filter(models.Order.user_id == current_user.id)
+
+    return query.all()
 
 
 # -------------------

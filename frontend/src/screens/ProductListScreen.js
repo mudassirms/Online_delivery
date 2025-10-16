@@ -40,6 +40,47 @@ export default function ProductsScreen({ route, navigation }) {
     );
   }
 
+  const renderItem = ({ item }) => {
+    const isAvailable = item.available;
+
+    return (
+      <View style={styles.productCard}>
+        <Image source={{ uri: item.image }} style={styles.productImage} />
+
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <Text style={styles.productName}>{item.name}</Text>
+          <Text style={styles.price}>₹{item.price}</Text>
+
+          {!isAvailable && (
+            <Text style={{ color: "red", fontWeight: "bold", marginBottom: 6 }}>
+              Unavailable
+            </Text>
+          )}
+
+          <TouchableOpacity
+            style={[
+              styles.button,
+              { backgroundColor: isAvailable ? "#FF6B00" : "#999" },
+            ]}
+            disabled={!isAvailable}
+            onPress={() => addToCart(item, 1)}
+          >
+            <Text style={styles.buttonText}>
+              {isAvailable ? "Add to Cart" : "Unavailable"}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{ marginTop: 6 }}
+            onPress={() => navigation.navigate("ProductDetails", { product: item })}
+          >
+            <Text style={{ color: "#007BFF" }}>View Details</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       <Text style={styles.header}>Products in {storeName}</Text>
@@ -47,32 +88,7 @@ export default function ProductsScreen({ route, navigation }) {
       <FlatList
         data={products}
         keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => (
-          <View style={styles.productCard}>
-            <Image source={{ uri: item.image }} style={styles.productImage} />
-
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.productName}>{item.name}</Text>
-              <Text style={styles.price}>₹{item.price}</Text>
-
-              <TouchableOpacity
-                style={[styles.button, { backgroundColor: "#333" }]}
-                onPress={() =>
-                  navigation.navigate("ProductDetail", { product: item })
-                }
-              >
-                <Text style={styles.buttonText}>View</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.button, { backgroundColor: "#FF6B00" }]}
-                onPress={() => addToCart(item.id, 1)}
-              >
-                <Text style={styles.buttonText}>Add to Cart</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
+        renderItem={renderItem}
         contentContainerStyle={{ padding: 16 }}
       />
     </SafeAreaView>

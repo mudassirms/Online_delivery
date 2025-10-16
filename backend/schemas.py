@@ -87,12 +87,17 @@ class ProductUpdate(BaseModel):
     price: Optional[float] = None
     image: Optional[str] = None
 
-
-class ProductOut(ProductBase):
+class ProductOut(BaseModel):
     id: int
+    name: str
+    price: float
+    image: Optional[str]
+    available: bool
+    store_id: int
 
     class Config:
         orm_mode = True
+
 
 
 # -----------------------
@@ -160,6 +165,7 @@ class OrderCreate(BaseModel):
 class OrderOut(BaseModel):
     id: int
     total_price: float
+    user: Optional[UserOut]
     status: str
     created_at: datetime
     address_id: int

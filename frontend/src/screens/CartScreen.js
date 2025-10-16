@@ -1,13 +1,17 @@
 import React, { useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useCart } from '../context/CartContext';
 
 export default function CartScreen({ navigation }) {
-  const { cart, removeFromCart, total, fetchCart } = useCart();
+  const { cart, removeFromCart, total, fetchCart, setCart } = useCart();
 
   useEffect(() => {
     fetchCart();
   }, []);
+
+  const handleRemove = (id) => {
+    removeFromCart(id);
+  };
 
   const renderItem = ({ item }) => (
     <View style={styles.cartItem}>
@@ -19,12 +23,17 @@ export default function CartScreen({ navigation }) {
       </Text>
       <TouchableOpacity
         style={styles.removeButton}
-        onPress={() => removeFromCart(item.id)}
+        onPress={() => handleRemove(item.id)}
       >
         <Text style={styles.removeButtonText}>Remove</Text>
       </TouchableOpacity>
     </View>
   );
+
+  const handleCheckout = () => {
+    if (!cart.length) return Alert.alert('Cart empty', 'Please add items to cart.');
+    navigation.navigate('Checkout');
+  };
 
   return (
     <View style={styles.container}>
@@ -41,7 +50,7 @@ export default function CartScreen({ navigation }) {
           <Text style={styles.totalText}>Total: ₹ {total.toFixed(2)}</Text>
           <TouchableOpacity
             style={styles.checkoutButton}
-            onPress={() => navigation.navigate('Checkout')}
+            onPress={handleCheckout}
           >
             <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
           </TouchableOpacity>
@@ -52,60 +61,15 @@ export default function CartScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#fff',
-  },
-  cartItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
-  },
-  itemText: {
-    flex: 1,
-    fontSize: 16,
-  },
-  priceText: {
-    fontSize: 16,
-    marginRight: 12,
-  },
-  removeButton: {
-    backgroundColor: '#ff4d4d',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-  },
-  removeButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  footer: {
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderColor: '#ddd',
-  },
-  totalText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  checkoutButton: {
-    backgroundColor: '#007bff',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  checkoutButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#555',
-  },
+  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
+  cartItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, paddingVertical: 8, borderBottomWidth: 1, borderColor: '#eee' },
+  itemText: { flex: 1, fontSize: 16 },
+  priceText: { fontSize: 16, marginRight: 12 },
+  removeButton: { backgroundColor: '#ff4d4d', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6 },
+  removeButtonText: { color: '#fff', fontWeight: 'bold' },
+  footer: { paddingVertical: 12, borderTopWidth: 1, borderColor: '#ddd' },
+  totalText: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
+  checkoutButton: { backgroundColor: '#007bff', paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
+  checkoutButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  emptyText: { fontSize: 16, color: '#555' },
 });

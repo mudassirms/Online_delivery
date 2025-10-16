@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { View, Text, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
 import api from '../services/api';
 import { useFocusEffect } from '@react-navigation/native'; // ✅ auto refresh when screen focused
