@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, SafeAreaView, Image, TouchableOpacity, ActivityIndicator, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  SafeAreaView,
+  Image,
+  TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
+  LinearGradient,
+} from "react-native";
 import api from "../services/api";
 
 export default function StoresScreen({ route, navigation }) {
@@ -23,36 +33,122 @@ export default function StoresScreen({ route, navigation }) {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#FF6B00" />
+        <Text style={styles.loadingText}>Loading stores...</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.header}>Stores in {categoryName}</Text>
+
       <FlatList
         data={stores}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.storeCard}
-            onPress={() => navigation.navigate("Products", { storeId: item.id, storeName: item.name })}
+            activeOpacity={0.8}
+            onPress={() =>
+              navigation.navigate("Products", {
+                storeId: item.id,
+                storeName: item.name,
+              })
+            }
           >
-            <Image source={{ uri: item.image }} style={styles.storeImage} />
-            <Text style={styles.storeName}>{item.name}</Text>
+            <View style={styles.imageContainer}>
+              <Image
+                source={{ uri: item.image }}
+                style={styles.storeImage}
+                resizeMode="cover"
+              />
+            </View>
+
+            <View style={styles.infoContainer}>
+              <Text style={styles.storeName}>{item.name}</Text>
+              <Text numberOfLines={1} style={styles.storeDesc}>
+                {item.description || "Tap to view available products"}
+              </Text>
+            </View>
           </TouchableOpacity>
         )}
-        contentContainerStyle={{ padding: 16 }}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>No stores found for this category.</Text>
+        }
+        contentContainerStyle={{ paddingBottom: 20, paddingHorizontal: 16 }}
       />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { fontSize: 20, fontWeight: "700", padding: 16 },
-  storeCard: { flexDirection: "row", alignItems: "center", marginBottom: 12, backgroundColor: "#b2f9f9", borderRadius: 10, padding: 10 },
-  storeImage: { width: 60, height: 60, borderRadius: 30, marginRight: 12 },
-  storeName: { fontSize: 16, fontWeight: "600" },
+  container: {
+    flex: 1,
+    backgroundColor: "#121212",
+  },
+  header: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#FF6B00",
+    textAlign: "center",
+    marginVertical: 20,
+  },
+  storeCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,107,0,0.15)",
+    shadowColor: "#FF6B00",
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  imageContainer: {
+    width: 70,
+    height: 70,
+    borderRadius: 16,
+    overflow: "hidden",
+    marginRight: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,107,0,0.3)",
+  },
+  storeImage: {
+    width: "100%",
+    height: "100%",
+  },
+  infoContainer: {
+    flex: 1,
+  },
+  storeName: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#fff",
+    marginBottom: 4,
+  },
+  storeDesc: {
+    fontSize: 13,
+    color: "#bbb",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#121212",
+  },
+  loadingText: {
+    color: "#bbb",
+    marginTop: 10,
+  },
+  emptyText: {
+    textAlign: "center",
+    marginTop: 50,
+    color: "#888",
+    fontSize: 15,
+  },
 });

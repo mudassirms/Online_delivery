@@ -8,9 +8,12 @@ import {
   ActivityIndicator,
   StyleSheet,
   TouchableOpacity,
+  Dimensions,
 } from "react-native";
 import api from "../services/api";
 import { useCart } from "../context/CartContext";
+
+const { width } = Dimensions.get("window");
 
 export default function ProductsScreen({ route, navigation }) {
   const { storeId, storeName } = route.params;
@@ -44,72 +47,154 @@ export default function ProductsScreen({ route, navigation }) {
     const isAvailable = item.available;
 
     return (
-      <View style={styles.productCard}>
-        <Image source={{ uri: item.image }} style={styles.productImage} />
-
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={styles.productName}>{item.name}</Text>
+      <View style={styles.card}>
+        <Image
+          source={{ uri: item.image }}
+          style={styles.image}
+          resizeMode="cover"
+        />
+        <View style={styles.details}>
+          <Text style={styles.name} numberOfLines={2}>
+            {item.name}
+          </Text>
           <Text style={styles.price}>₹{item.price}</Text>
 
           {!isAvailable && (
-            <Text style={{ color: "red", fontWeight: "bold", marginBottom: 6 }}>
-              Unavailable
-            </Text>
+            <Text style={styles.unavailable}>Unavailable</Text>
           )}
 
-          <TouchableOpacity
-            style={[
-              styles.button,
-              { backgroundColor: isAvailable ? "#FF6B00" : "#999" },
-            ]}
-            disabled={!isAvailable}
-            onPress={() => addToCart(item, 1)}
-          >
-            <Text style={styles.buttonText}>
-              {isAvailable ? "Add to Cart" : "Unavailable"}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={[
+                styles.addButton,
+                !isAvailable && { backgroundColor: "#555" },
+              ]}
+              disabled={!isAvailable}
+              onPress={() => addToCart(item, 1)}
+            >
+              <Text style={styles.addButtonText}>
+                {isAvailable ? "Add to Cart" : "Unavailable"}
+              </Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={{ marginTop: 6 }}
-            onPress={() => navigation.navigate("ProductDetails", { product: item })}
-          >
-            <Text style={{ color: "#007BFF" }}>View Details</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.detailsButton}
+              onPress={() =>
+                navigation.navigate("ProductDetails", { product: item })
+              }
+            >
+              <Text style={styles.detailsButtonText}>View</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     );
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      <Text style={styles.header}>Products in {storeName}</Text>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.header}>🛒 {storeName} Products</Text>
 
       <FlatList
         data={products}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
-        contentContainerStyle={{ padding: 16 }}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: { fontSize: 20, fontWeight: "700", padding: 16, color: "#222" },
-  productCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-    backgroundColor: "#f9f9f9",
-    borderRadius: 10,
-    padding: 10,
-    elevation: 2,
+  container: {
+    flex: 1,
+    backgroundColor: "#0F0F0F",
   },
-  productImage: { width: 100, height: 100, borderRadius: 10 },
-  productName: { fontSize: 16, fontWeight: "600", color: "#333" },
-  price: { color: "#FF6B00", fontWeight: "bold", marginVertical: 6 },
-  button: { borderRadius: 6, paddingVertical: 6, alignItems: "center", marginTop: 6 },
-  buttonText: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#0F0F0F",
+  },
+  header: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#FF6B00",
+    textAlign: "center",
+    paddingVertical: 16,
+    letterSpacing: 0.5,
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 80,
+  },
+  card: {
+    flexDirection: "row",
+    backgroundColor: "#1A1A1A",
+    borderRadius: 14,
+    marginBottom: 18,
+    overflow: "hidden",
+    shadowColor: "#FF6B00",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
+  image: {
+    width: width * 0.3,
+    height: width * 0.3,
+  },
+  details: {
+    flex: 1,
+    padding: 12,
+    justifyContent: "space-between",
+  },
+  name: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#F5F5F5",
+    marginBottom: 4,
+  },
+  price: {
+    color: "#FF6B00",
+    fontWeight: "700",
+    fontSize: 15,
+    marginBottom: 6,
+  },
+  unavailable: {
+    color: "#FF4C4C",
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  addButton: {
+    flex: 1,
+    backgroundColor: "#FF6B00",
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    marginRight: 8,
+  },
+  addButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  detailsButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#FF6B00",
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  detailsButtonText: {
+    color: "#FF6B00",
+    fontWeight: "600",
+    fontSize: 14,
+  },
 });

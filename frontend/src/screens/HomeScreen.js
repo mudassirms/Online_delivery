@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -42,39 +42,48 @@ export default function HomeScreen({ navigation }) {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <SafeAreaView style={styles.center}>
         <ActivityIndicator size="large" color="#FF6B00" />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#0f0f0f" }}>
       <ScrollView>
         {/* HEADER */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Welcome Back!</Text>
-            <Text style={styles.username}>Mudassir</Text>
+            <Text style={styles.greeting}>Welcome Back,</Text>
+            <Text style={styles.username}>Mudassir 👋</Text>
           </View>
           <Image source={{ uri: "https://via.placeholder.com/50" }} style={styles.avatar} />
         </View>
 
         {/* SEARCH BAR */}
         <View style={styles.searchBar}>
-          <TextInput placeholder="Search for food or groceries..." style={styles.searchInput} />
+          <TextInput
+            placeholder="Search for food or groceries..."
+            placeholderTextColor="#ccc"
+            style={styles.searchInput}
+          />
         </View>
 
         {/* BANNERS */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 10 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 16, paddingLeft: 16 }}>
           {banners.map((banner) => (
-            <Image key={banner.id} source={{ uri: banner.image }} style={styles.bannerImage} />
+            <View key={banner.id} style={styles.bannerWrapper}>
+              <Image source={{ uri: banner.image }} style={styles.bannerImage} />
+            </View>
           ))}
         </ScrollView>
 
         {/* CATEGORY SECTION */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Shop by Category</Text>
+          <TouchableOpacity>
+            <Text style={styles.seeAllText}>See All</Text>
+          </TouchableOpacity>
         </View>
         <FlatList
           data={categories}
@@ -85,8 +94,10 @@ export default function HomeScreen({ navigation }) {
               style={styles.categoryCard}
               onPress={() => navigation.navigate("Stores", { categoryId: item.id, categoryName: item.name })}
             >
-              <Image source={{ uri: item.image }} style={styles.categoryImage} />
-              <Text style={styles.categoryName}>{item.name}</Text>
+              <View style={styles.glassBackground}>
+                <Image source={{ uri: item.image }} style={styles.categoryImage} />
+                <Text style={styles.categoryName}>{item.name}</Text>
+              </View>
             </TouchableOpacity>
           )}
           showsHorizontalScrollIndicator={false}
@@ -97,7 +108,7 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Popular Picks</Text>
           <TouchableOpacity>
-            <Text style={{ color: "#FF6B00", fontWeight: "600" }}>See All</Text>
+            <Text style={styles.seeAllText}>See All</Text>
           </TouchableOpacity>
         </View>
         <FlatList
@@ -106,13 +117,15 @@ export default function HomeScreen({ navigation }) {
           horizontal
           renderItem={({ item }) => (
             <View style={styles.productCard}>
-              <Image source={{ uri: item.image }} style={styles.productImage} />
-              <Text style={styles.productName}>{item.name}</Text>
-              <Text style={{ color: "#FF6B00", fontWeight: "bold" }}>₹{item.price}</Text>
+              <View style={styles.glassBackground}>
+                <Image source={{ uri: item.image }} style={styles.productImage} />
+                <Text style={styles.productName}>{item.name}</Text>
+                <Text style={styles.productPrice}>₹{item.price}</Text>
+              </View>
             </View>
           )}
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingLeft: 16 }}
+          contentContainerStyle={{ paddingLeft: 16, paddingBottom: 16 }}
         />
       </ScrollView>
     </SafeAreaView>
@@ -120,19 +133,52 @@ export default function HomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  center: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0f0f0f" },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 16 },
-  greeting: { fontSize: 16, color: "#555" },
-  username: { fontSize: 22, fontWeight: "bold" },
-  avatar: { width: 50, height: 50, borderRadius: 25 },
-  searchBar: { flexDirection: "row", alignItems: "center", marginHorizontal: 16, padding: 10, borderRadius: 10, backgroundColor: "#f0f0f0" },
-  searchInput: { flex: 1, fontSize: 16 },
-  bannerImage: { width: 300, height: 150, borderRadius: 12, marginRight: 10 },
-  sectionHeader: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 10, alignItems: "center" },
-  sectionTitle: { fontSize: 20, fontWeight: "700" },
-  productCard: { width: 100, marginRight: 12, backgroundColor: "#fff", borderRadius: 12, padding: 8, elevation: 2, alignItems: "center" },
-  productImage: { width: 100, height: 100, borderRadius: 10 },
-  productName: { marginTop: 5, fontWeight: "600" },
-  categoryCard: { width: 80, marginRight: 16, alignItems: "center" },
-  categoryImage: { width: 70, height: 70, borderRadius: 35, marginBottom: 6, backgroundColor: "#f5f5f5" },
-  categoryName: { fontSize: 12, fontWeight: "600", textAlign: "center" },
+  greeting: { fontSize: 16, color: "#aaa" },
+  username: { fontSize: 26, fontWeight: "bold", color: "#fff" },
+  avatar: { width: 50, height: 50, borderRadius: 25, borderWidth: 1, borderColor: "#333" },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 16,
+    padding: 12,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  searchInput: { flex: 1, fontSize: 16, color: "#fff" },
+  bannerWrapper: {
+    width: 300,
+    height: 160,
+    borderRadius: 16,
+    marginRight: 12,
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  bannerImage: { width: "100%", height: "100%", borderRadius: 16 },
+  sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12 },
+  sectionTitle: { fontSize: 20, fontWeight: "700", color: "#fff" },
+  seeAllText: { color: "#FF6B00", fontWeight: "600" },
+  categoryCard: { width: 90, marginRight: 16 },
+  glassBackground: {
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: 20,
+    padding: 12,
+    alignItems: "center",
+    backdropFilter: "blur(10px)", // Note: RN does not support natively; need expo-blur or similar
+    shadowColor: "#FF6B00",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+  },
+  categoryImage: { width: 60, height: 60, borderRadius: 30, marginBottom: 6 },
+  categoryName: { fontSize: 12, fontWeight: "600", color: "#fff", textAlign: "center" },
+  productCard: { width: 150, marginRight: 16 },
+  productImage: { width: 100, height: 100, borderRadius: 16 },
+  productName: { marginTop: 8, fontWeight: "700", color: "#fff", textAlign: "center" },
+  productPrice: { marginTop: 4, color: "#FF6B00", fontWeight: "700" },
 });

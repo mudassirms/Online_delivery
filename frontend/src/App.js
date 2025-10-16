@@ -27,18 +27,23 @@ function MainTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarShowLabel: true,
         tabBarActiveTintColor: '#FF6B00',
         tabBarInactiveTintColor: '#999',
         tabBarStyle: {
-          backgroundColor: '#fff',
+          backgroundColor: '#121212', // Dark futuristic background
           borderTopWidth: 0,
-          elevation: 20,
-          shadowColor: '#000',
-          shadowOpacity: 0.1,
-          shadowRadius: 6,
+          elevation: 10,
           height: 70,
           paddingBottom: 10,
-          paddingTop: 8,
+          shadowColor: '#FF6B00',
+          shadowOpacity: 0.25,
+          shadowRadius: 10,
+          shadowOffset: { width: 0, height: 5 },
+        },
+         tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
         },
         tabBarIcon: ({ color, focused }) => {
           let iconName;
