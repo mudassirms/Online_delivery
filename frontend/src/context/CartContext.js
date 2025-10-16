@@ -20,7 +20,7 @@ export const CartProvider = ({ children }) => {
   const addToCart = async (productId, quantity = 1) => {
     try {
       await api.post('/catalog/cart', { product_id: productId, quantity });
-      fetchCart();
+      fetchCart(); // refresh backend cart
     } catch (err) {
       console.error('Error adding to cart:', err);
     }
@@ -35,11 +35,19 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  const clearCart = async () => {
+    // delete all items on backend
+    try {
+      await Promise.all(cart.map(item => api.delete(`/catalog/cart/${item.id}`)));
+      setCart([]);
+      setTotal(0);
+    } catch (err) {
+      console.error('Error clearing cart:', err);
+    }
+  };
+
   const calculateTotal = (cartItems) => {
-    const totalAmount = cartItems.reduce(
-      (sum, item) => sum + item.product.price * item.quantity,
-      0
-    );
+    const totalAmount = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
     setTotal(totalAmount);
   };
 
@@ -48,7 +56,7 @@ export const CartProvider = ({ children }) => {
   }, []);
 
   return (
-    <CartContext.Provider value={{ cart, total, fetchCart, addToCart, removeFromCart }}>
+    <CartContext.Provider value={{ cart, total, fetchCart, addToCart, removeFromCart, clearCart }}>
       {children}
     </CartContext.Provider>
   );

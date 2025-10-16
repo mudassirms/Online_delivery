@@ -1,0 +1,66 @@
+{
+    "TopPerformingStudent": [
+      { "name": "Abdullah", "score": 96, "year": "2023", "grade": "Grade 10" },
+      { "name": "Amit", "score": 94, "year": "2023", "grade": "Grade 10" },
+      { "name": "Sohail", "score": 93, "year": "2023", "grade": "Grade 10" },
+      { "name": "Sam", "score": 91, "year": "2023", "grade": "Grade 10" },
+      { "name": "Sarah", "score": 90, "year": "2023", "grade": "Grade 10" },
+      { "name": "Abdullah", "score": 90, "year": "2022", "grade": "Grade 10" },
+      { "name": "Amit", "score": 89, "year": "2022", "grade": "Grade 10" },
+      { "name": "Sohail", "score": 91, "year": "2022", "grade": "Grade 10" },
+      { "name": "Sam", "score": 88, "year": "2022", "grade": "Grade 10" },
+      { "name": "Sarah", "score": 85, "year": "2022", "grade": "Grade 10" },
+      { "name": "Zara", "score": 92, "year": "2022", "grade": "Grade 9" },
+      { "name": "Ali", "score": 89, "year": "2022", "grade": "Grade 9" },
+      { "name": "Neha", "score": 90, "year": "2022", "grade": "Grade 9" },
+      { "name": "Arjun", "score": 87, "year": "2022", "grade": "Grade 9" },
+      { "name": "Kavya", "score": 88, "year": "2022", "grade": "Grade 9" }
+    ],
+    "SubjectPerformance": [
+      { "name": "Mathematics", "marks": 80, "year": "2023", "grade": "Grade 10" },
+      { "name": "Science", "marks": 85, "year": "2023", "grade": "Grade 10" },
+      { "name": "English", "marks": 75, "year": "2023", "grade": "Grade 10" },
+      { "name": "History", "marks": 90, "year": "2023", "grade": "Grade 10" },
+      { "name": "Geography", "marks": 88, "year": "2023", "grade": "Grade 10" },
+      { "name": "Mathematics", "marks": 78, "year": "2022", "grade": "Grade 9" },
+      { "name": "Science", "marks": 80, "year": "2022", "grade": "Grade 9" },
+      { "name": "English", "marks": 72, "year": "2022", "grade": "Grade 9" },
+      { "name": "History", "marks": 85, "year": "2022", "grade": "Grade 9" },
+      { "name": "Geography", "marks": 82, "year": "2022", "grade": "Grade 9" }
+    ],
+    "averageMarks": [
+      { "year": "2023", "grade": "Grade 10", "averageMarks": 85 },
+      { "year": "2022", "grade": "Grade 10", "averageMarks": 83 },
+      { "year": "2022", "grade": "Grade 9", "averageMarks": 80 }
+    ],
+    "DropOutRate": [
+      { "year": "2023", "grade": "Grade 10", "dropoutRate": 5 },
+      { "year": "2022", "grade": "Grade 10", "dropoutRate": 6 },
+      { "year": "2022", "grade": "Grade 9", "dropoutRate": 4 }
+    ],
+    "GenderWisePerformance": [
+      { "year": "2023", "grade": "Grade 10", "gender": "Male", "averageMarks": 84 },
+      { "year": "2023", "grade": "Grade 10", "gender": "Female", "averageMarks": 87 },
+      { "year": "2022", "grade": "Grade 10", "gender": "Male", "averageMarks": 82 },
+      { "year": "2022", "grade": "Grade 10", "gender": "Female", "averageMarks": 85 }
+    ],
+    "PerformanceByMotherTongue": [
+      { "year": "2023", "grade": "Grade 10", "motherTongue": "English", "averageMarks": 88 },
+      { "year": "2023", "grade": "Grade 10", "motherTongue": "Hindi", "averageMarks": 83 },
+      { "year": "2022", "grade": "Grade 10", "motherTongue": "English", "averageMarks": 85 },
+      { "year": "2022", "grade": "Grade 10", "motherTongue": "Hindi", "averageMarks": 80 }
+    ],
+    "PerformanceByReligion": [
+      { "year": "2023", "grade": "Grade 10", "religion": "Islam", "averageMarks": 86 },
+      { "year": "2023", "grade": "Grade 10", "religion": "Christian", "averageMarks": 84 },
+      { "year": "2022", "grade": "Grade 10", "religion": "Islam", "averageMarks": 82 },
+      { "year": "2022", "grade": "Grade 10", "religion": "Christian", "averageMarks": 80 }
+    ],
+    "PerformanceByParentEducation": [
+      { "year": "2023", "grade": "Grade 10", "parentEducation": "High School", "averageMarks": 82 },
+      { "year": "2023", "grade": "Grade 10", "parentEducation": "Bachelor's", "averageMarks": 87 },
+      { "year": "2022", "grade": "Grade 10", "parentEducation": "High School", "averageMarks": 80 },
+      { "year": "2022", "grade": "Grade 10", "parentEducation": "Bachelor's", "averageMarks": 85 }
+    ]
+  }
+  

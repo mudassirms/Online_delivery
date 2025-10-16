@@ -1,23 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { login } from '../services/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { login as apiLogin } from '../services/auth';
+import { AuthContext } from '../context/AuthContext';
 
 export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState('demo@user.com');
+  const [name, setName] = useState('username');
   const [password, setPassword] = useState('password');
+  const { token, login } = useContext(AuthContext);
 
+  // ✅ Redirect automatically if already logged in
   useEffect(() => {
-    (async () => {
-      const t = await AsyncStorage.getItem('token');
-      if (t) navigation.replace('Home');
-    })();
-  }, []);
+    if (token) {
+      navigation.replace('MainTabs');
+    }
+  }, [token]);
 
   const onLogin = async () => {
     try {
-      await login(email, password);
-      navigation.replace('Home');
+      const res = await apiLogin(name, password);
+      // Save token in AuthContext, will trigger useEffect redirect
+      login(res.access_token);
     } catch (e) {
       Alert.alert('Login failed', 'Check your credentials or register first.');
     }
@@ -26,8 +28,20 @@ export default function LoginScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>TownDrop</Text>
-      <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={styles.input} autoCapitalize="none" />
-      <TextInput placeholder="Password" value={password} onChangeText={setPassword} style={styles.input} secureTextEntry />
+      <TextInput
+        placeholder="Full name"
+        value={name}
+        onChangeText={setName}
+        style={styles.input}
+        autoCapitalize="none"
+      />
+      <TextInput
+        placeholder="Password"
+        value={password}
+        onChangeText={setPassword}
+        style={styles.input}
+        secureTextEntry
+      />
       <Button title="Login" onPress={onLogin} />
       <TouchableOpacity onPress={() => navigation.navigate('Register')} style={{ marginTop: 16 }}>
         <Text>New here? Create an account</Text>

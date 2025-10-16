@@ -6,20 +6,24 @@ export default function RegisterScreen({ navigation }) {
   const [email, setEmail] = useState('demo@user.com');
   const [password, setPassword] = useState('password');
   const [name, setName] = useState('Demo User');
+  const [role, setRole] = useState('customer'); 
 
-  const onRegister = async () => {
-    try {
-      await register(email, password, name);
-      Alert.alert('Success', 'Account created. You can log in now.');
-      navigation.replace('Login');
-    } catch (e) {
-      Alert.alert('Error', 'Registration failed.');
-    }
-  };
+const onRegister = async () => {
+  try {
+    const res = await register(email, password, name, role);
+    Alert.alert('Success', 'Account created. You can log in now.');
+    navigation.replace('Login');
+  } catch (e) {
+    console.error(e.response?.data || e.message);
+    Alert.alert('Error', 'Registration failed.');
+  }
+};
+
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Create your TownDrop account</Text>
+      <TextInput placeholder="Role " value={role} onChangeText={setRole} style={styles.input} />
       <TextInput placeholder="Full name" value={name} onChangeText={setName} style={styles.input} />
       <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={styles.input} autoCapitalize="none" />
       <TextInput placeholder="Password" value={password} onChangeText={setPassword} style={styles.input} secureTextEntry />

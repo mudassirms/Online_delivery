@@ -2,8 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from './api';
 
 export async function login(email, password) {
-  // If backend uses OAuth2 token endpoint (FastAPI's OAuth2PasswordRequestForm),
-  // the token endpoint expects "username" + "password" in form format:
+
   const data = new URLSearchParams();
   data.append('username', email);
   data.append('password', password);
@@ -12,11 +11,19 @@ export async function login(email, password) {
   return res.data;
 }
 
-export async function register(email, password) {
-  const res = await api.post('/auth/register', { email, password });
+export async function register(email, password, name) {
+  const res = await api.post('/auth/register', { email, password, name });
   return res.data;
 }
 
+
 export async function logout() {
   await AsyncStorage.removeItem('token');
+}
+export async function getProfile() {
+  const token = await AsyncStorage.getItem('token');
+  const res = await api.get('/auth/me', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data;
 }

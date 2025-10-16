@@ -4,19 +4,38 @@ import { useCart } from '../context/CartContext';
 import api from '../services/api';
 
 export default function CheckoutScreen({ navigation }) {
-  const { cart, clearCart, total } = useCart();
+  const { cart, setCart, fetchCart, total } = useCart(); // ✅ use setCart and fetchCart
   const [address, setAddress] = useState('123, Main Street, Town');
+  const [loading, setLoading] = useState(false);
 
   const placeOrder = async () => {
     if (!cart.length) return Alert.alert('Cart empty');
+
+    setLoading(true);
     try {
-      const items = cart.map(i => ({ product_id: i.product.id, quantity: i.quantity }));
-      const res = await api.post('/orders', { items, address });
-      clearCart();
-      Alert.alert('Order placed', `Order #${res.data.id} placed successfully`);
-      navigation.navigate('Orders');
+      // 1️⃣ Create address
+      const resAddress = await api.post('/catalog/addresses', {
+        address_line: address,
+        city: 'Town',
+        state: 'State',
+        pincode: '123456',
+      });
+      const addressId = resAddress.data.id;
+
+      // 2️⃣ Place the order (backend clears cart automatically)
+      const resOrder = await api.post('/catalog/orders', { address_id: addressId });
+
+      // 3️⃣ Clear local cart state to avoid 404 errors
+      setCart([]);
+      fetchCart(); // optionally refresh cart from backend
+
+      Alert.alert('Order placed', `Order #${resOrder.data.id} placed successfully`);
+      navigation.navigate('Orders'); // navigate to orders screen
     } catch (e) {
+      console.log('Place order error:', e.response?.data || e.message);
       Alert.alert('Error', 'Please log in or try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -33,7 +52,11 @@ export default function CheckoutScreen({ navigation }) {
       <View style={{ height: 16 }} />
       <Text style={{ fontSize: 16 }}>Order Total: ₹ {total.toFixed(2)}</Text>
       <View style={{ height: 8 }} />
-      <Button title="Place Order" onPress={placeOrder} />
+      <Button
+        title={loading ? 'Placing Order...' : 'Place Order'}
+        onPress={placeOrder}
+        disabled={loading}
+      />
     </View>
   );
 }

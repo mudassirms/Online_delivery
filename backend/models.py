@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Text, func
 from sqlalchemy.orm import relationship
 from backend.database import Base
 from datetime import datetime
@@ -7,8 +7,21 @@ from sqlalchemy import DateTime
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)  # 👈 Added this line
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    hashed_password = Column(String(255), nullable=False)
+    role = Column(String(50), default="user") 
+
+    addresses = relationship("Address", back_populates="user")
+    orders = relationship("Order", back_populates="user")
+    cart_items = relationship("Cart", back_populates="user")
+    logins = relationship("LoginHistory", back_populates="user")
+
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, index=True, nullable=False) 
     hashed_password = Column(String(255), nullable=False)
+    role = Column(String(50), default="user") 
 
     addresses = relationship("Address", back_populates="user")
     orders = relationship("Order", back_populates="user")
@@ -36,11 +49,16 @@ class Category(Base):
 class Store(Base):
     __tablename__ = "stores"
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), index=True, nullable=False)  
-    image = Column(String(255), nullable=True)  
+    name = Column(String(100), index=True, nullable=False)
+    image = Column(String(255), nullable=True)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # 👈 NEW LINE
+
     category = relationship("Category", back_populates="stores")
     products = relationship("Product", back_populates="store")
+    owner = relationship("User")  # 👈 Optional reverse link
+
+
 
 class Product(Base):
     __tablename__ = "products"
@@ -59,6 +77,7 @@ class Order(Base):
     total_price = Column(Float, nullable=False)
     status = Column(String(50), default="Pending")  
     payment_method = Column(String(50), default="COD")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="orders")
     address = relationship("Address")
