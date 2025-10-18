@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
+import { 
+  View, Text, TextInput, TouchableOpacity, Alert, 
+  ScrollView, ActivityIndicator, StyleSheet 
+} from 'react-native';
 import { useCart } from '../context/CartContext';
 import api from '../services/api';
 
@@ -7,9 +10,11 @@ export default function CheckoutScreen({ navigation }) {
   const { cart, setCart, fetchCart, total } = useCart();
   const [address, setAddress] = useState('123, Main Street, Town');
   const [loading, setLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState(null); // initially null
 
   const placeOrder = async () => {
     if (!cart.length) return Alert.alert('Cart empty', 'Add items before checkout.');
+    if (!paymentMethod) return Alert.alert('Select Payment', 'Please select a payment method.');
 
     setLoading(true);
     try {
@@ -20,6 +25,7 @@ export default function CheckoutScreen({ navigation }) {
         return;
       }
 
+      // Create address
       const resAddress = await api.post('/catalog/addresses', {
         address_line: address,
         city: 'Town',
@@ -28,15 +34,25 @@ export default function CheckoutScreen({ navigation }) {
       });
       const addressId = resAddress.data.id;
 
+      // Place order with payment method
       const resOrder = await api.post('/catalog/orders', {
         address_id: addressId,
         store_id: storeId,
+        payment_method: paymentMethod,
+        items: cart.map(item => ({
+          product_id: item.product.id,
+          quantity: item.quantity,
+        })),
+        total_price: total,
       });
 
       setCart([]);
       fetchCart();
 
-      Alert.alert('Order placed', `Order #${resOrder.data.id} placed successfully`);
+      Alert.alert(
+        'Order placed',
+        `Order #${resOrder.data.id} placed successfully with ${paymentMethod.toUpperCase()}`
+      );
       navigation.navigate('Orders');
     } catch (e) {
       console.log('Place order error:', e.response?.data || e.message);
@@ -61,19 +77,43 @@ export default function CheckoutScreen({ navigation }) {
           style={styles.textInput}
         />
 
+        {/* Payment Method */}
+        <Text style={styles.sectionTitle}>Payment Method</Text>
+        <View style={styles.paymentOption}>
+          <TouchableOpacity
+            style={[
+              styles.radioButton,
+              paymentMethod === 'cod' && styles.radioSelected
+            ]}
+            onPress={() => setPaymentMethod('cod')}
+          >
+            <Text style={styles.radioText}>Cash on Delivery (COD)</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Order Summary */}
         <View style={styles.summary}>
-          <Text style={styles.summaryText}>Items in Cart: <Text style={styles.bold}>{cart.length}</Text></Text>
-          <Text style={styles.summaryText}>Total: <Text style={styles.bold}>₹ {total.toFixed(2)}</Text></Text>
+          <Text style={styles.summaryText}>
+            Items in Cart: <Text style={styles.bold}>{cart.length}</Text>
+          </Text>
+          <Text style={styles.summaryText}>
+            Total: <Text style={styles.bold}>₹ {total.toFixed(2)}</Text>
+          </Text>
         </View>
 
         {/* Place Order Button */}
         <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          disabled={loading}
+          style={[styles.button, (loading || !paymentMethod) && styles.buttonDisabled]}
+          disabled={loading || !paymentMethod}
           onPress={placeOrder}
         >
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Place Order</Text>}
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>
+              {paymentMethod ? "Place Order" : "Select Payment Method"}
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -87,7 +127,9 @@ export default function CheckoutScreen({ navigation }) {
                 <Text style={styles.cartItemName}>{item.product?.name}</Text>
                 <Text style={styles.cartItemQty}>Qty: {item.quantity}</Text>
               </View>
-              <Text style={styles.cartItemPrice}>₹ {(item.product?.price * item.quantity).toFixed(2)}</Text>
+              <Text style={styles.cartItemPrice}>
+                ₹ {(item.product?.price * item.quantity).toFixed(2)}
+              </Text>
             </View>
           ))}
         </View>
@@ -120,6 +162,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a1a1a',
     color: '#fff',
   },
+  paymentOption: { marginBottom: 20 },
+  radioButton: {
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#333',
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  radioSelected: { backgroundColor: '#FF6B00', borderColor: '#FF6B00' },
+  radioText: { color: '#fff', fontWeight: '600' },
   summary: {
     paddingVertical: 10,
     borderTopWidth: 1,

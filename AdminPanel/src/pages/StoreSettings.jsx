@@ -32,7 +32,9 @@ const StoresPage = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="text-center mt-10 text-lg">Loading your stores...</div>
+        <div className="text-center mt-20 text-lg text-gray-400 animate-pulse">
+          Loading your stores...
+        </div>
       </Layout>
     );
   }
@@ -40,9 +42,9 @@ const StoresPage = () => {
   if (stores.length === 0) {
     return (
       <Layout>
-        <div className="text-center mt-10">
-          <h2 className="text-lg font-semibold">No stores found</h2>
-          <p>You don’t own any stores yet.</p>
+        <div className="flex flex-col items-center justify-center mt-20 text-center">
+          <h2 className="text-xl font-semibold text-gray-200 mb-2">No stores found</h2>
+          <p className="text-gray-400">You don’t own any stores yet.</p>
         </div>
       </Layout>
     );
@@ -51,23 +53,35 @@ const StoresPage = () => {
   return (
     <Layout>
       <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4">My Stores</h1>
+        <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-cyan-400 to-blue-500 text-transparent bg-clip-text">
+          My Stores
+        </h1>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {stores.map((store) => (
             <div
               key={store.id}
-              className="bg-white border rounded-lg p-4 shadow hover:shadow-lg transition cursor-pointer"
               onClick={() => navigate(`/dashboard/stores/${store.id}`)}
+              className="relative bg-gradient-to-br from-[#0f172a] to-[#1e293b] border border-gray-700 rounded-2xl p-4 shadow-md hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer group"
             >
-              <img
-                src={store.image || "https://via.placeholder.com/150"}
-                alt={store.name}
-                className="w-full h-40 object-cover rounded mb-3"
-              />
-              <h2 className="text-lg font-semibold">{store.name}</h2>
-              <p className="text-sm text-gray-600">
-                Category ID: {store.category_id}
+              <div className="overflow-hidden rounded-xl mb-4">
+                <img
+                  src={store.image || "https://via.placeholder.com/300x200?text=No+Image"}
+                  alt={store.name}
+                  className="w-full h-40 object-cover rounded-xl group-hover:opacity-90 transition-all"
+                />
+              </div>
+
+              <h2 className="text-lg font-semibold text-white mb-1 group-hover:text-cyan-400 transition-all">
+                {store.name}
+              </h2>
+              <p className="text-sm text-gray-400 mb-2">
+                Category ID: <span className="text-gray-300">{store.category_id}</span>
               </p>
+
+              <div className="absolute bottom-3 right-3 bg-cyan-500/20 text-cyan-300 text-xs px-3 py-1 rounded-full">
+                Click to view products →
+              </div>
             </div>
           ))}
         </div>

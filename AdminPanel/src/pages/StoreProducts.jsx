@@ -23,12 +23,11 @@ export default function StoreProducts() {
     fetchProducts();
   }, [storeId]);
 
-  // Toggle availability
   const toggleAvailability = async (id, current) => {
     try {
       await api.patch(`/catalog/products/${id}`, { available: !current });
-      setProducts(
-        products.map((p) => (p.id === id ? { ...p, available: !current } : p))
+      setProducts((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, available: !current } : p))
       );
     } catch (e) {
       console.warn(e);
@@ -37,69 +36,83 @@ export default function StoreProducts() {
 
   return (
     <Layout>
-      <h1 className="text-2xl font-bold mb-6">Products for Store {storeId}</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-cyan-400 drop-shadow-md">
+          Products — Store #{storeId}
+        </h1>
+        <button
+          className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-5 py-2 rounded-lg shadow-md hover:scale-105 transition transform"
+          onClick={() => {
+            setEditingProduct(null);
+            setModalOpen(true);
+          }}
+        >
+          + Add Product
+        </button>
+      </div>
 
-      <button
-        className="bg-green-500 text-white px-4 py-2 rounded mb-4"
-        onClick={() => {
-          setEditingProduct(null);
-          setModalOpen(true);
-        }}
-      >
-        Add Product
-      </button>
-
-      <table className="w-full text-left border-collapse">
-        <thead>
-          <tr className="border-b">
-            <th className="p-2">ID</th>
-            <th className="p-2">Name</th>
-            <th className="p-2">Price</th>
-            <th className="p-2 text-center">Available</th>
-            <th className="p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
+      {products.length === 0 ? (
+        <p className="text-center text-gray-400 mt-10">
+          No products added yet.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {products.map((p) => (
-            <tr key={p.id} className="border-b">
-              <td className="p-2">{p.id}</td>
-              <td className="p-2">{p.name}</td>
-              <td className="p-2">₹{p.price}</td>
-              <td className="p-2 text-center">
-                <label className="inline-flex items-center cursor-pointer">
+            <div
+              key={p.id}
+              className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border border-gray-700/60 rounded-2xl p-6 shadow-lg text-gray-200 transition duration-300"
+            >
+              <h2 className="text-xl font-semibold mb-2 text-cyan-300">
+                {p.name}
+              </h2>
+              <p className="text-gray-400 mb-3 text-sm tracking-wide">
+                ₹{p.price.toFixed(2)}
+              </p>
+
+              <div className="flex items-center justify-between mb-4">
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    p.available
+                      ? "bg-green-600/80 text-white"
+                      : "bg-gray-700/80 text-gray-300"
+                  }`}
+                >
+                  {p.available ? "Available" : "Unavailable"}
+                </span>
+
+                {/* Toggle switch */}
+                <label className="relative inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
                     className="sr-only peer"
                     checked={p.available}
                     onChange={() => toggleAvailability(p.id, p.available)}
                   />
-                  <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 relative transition-all">
-                    <span
-                      className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 ease-in-out ${
+                  <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-green-600 transition-all duration-300 ease-in-out">
+                    <div
+                      className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-300 ${
                         p.available ? "translate-x-5" : "translate-x-0"
                       }`}
-                    ></span>
+                    ></div>
                   </div>
-                  <span className="ml-3 text-sm font-medium text-gray-700">
-                    {p.available ? "Available" : "Unavailable"}
-                  </span>
                 </label>
-              </td>
-              <td className="p-2 flex gap-2">
+              </div>
+
+              <div className="flex justify-end">
                 <button
-                  className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-4 py-2 rounded-lg transition font-medium"
                   onClick={() => {
                     setEditingProduct(p);
                     setModalOpen(true);
                   }}
                 >
-                  Edit
+                  Edit Product
                 </button>
-              </td>
-            </tr>
+              </div>
+            </div>
           ))}
-        </tbody>
-      </table>
+        </div>
+      )}
 
       {modalOpen && (
         <ProductModal

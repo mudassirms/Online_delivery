@@ -80,7 +80,7 @@ export default function ProductsScreen({ route, navigation }) {
             <TouchableOpacity
               style={styles.detailsButton}
               onPress={() =>
-                navigation.navigate("ProductDetails", { product: item })
+                navigation.navigate("ProductDetail", { product: item })
               }
             >
               <Text style={styles.detailsButtonText}>View</Text>

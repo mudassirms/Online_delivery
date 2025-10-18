@@ -27,7 +27,6 @@ const ProductModal = ({ product, storeId, onClose, onSave }) => {
     setLoading(true);
     try {
       if (product) {
-        // Update existing product
         await api.put(`/catalog/products/${product.id}`, {
           name,
           price,
@@ -36,7 +35,6 @@ const ProductModal = ({ product, storeId, onClose, onSave }) => {
           store_id: storeId,
         });
       } else {
-        // Add new product
         await api.post("/catalog/products", {
           name,
           price,
@@ -55,74 +53,84 @@ const ProductModal = ({ product, storeId, onClose, onSave }) => {
   };
 
   return (
-    <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
-      <div className="bg-white rounded-lg w-96 p-6 shadow-lg relative">
-        <h2 className="text-xl font-bold mb-4">
+    <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 backdrop-blur-sm">
+      <div className="bg-gradient-to-br from-[#0f172a] to-[#1e293b] text-white rounded-2xl w-96 p-6 shadow-2xl relative border border-gray-700">
+        <h2 className="text-2xl font-bold mb-5 text-center">
           {product ? "Edit Product" : "Add Product"}
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Name */}
           <div>
-            <label className="block text-gray-700 text-sm mb-1">Name</label>
+            <label className="block text-sm mb-1 text-gray-300">Name</label>
             <input
               type="text"
-              className="w-full border px-3 py-2 rounded"
+              className="w-full bg-[#1e293b] text-white border border-gray-600 px-3 py-2 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
             />
           </div>
 
+          {/* Price */}
           <div>
-            <label className="block text-gray-700 text-sm mb-1">Price (₹)</label>
+            <label className="block text-sm mb-1 text-gray-300">Price (₹)</label>
             <input
               type="number"
-              className="w-full border px-3 py-2 rounded"
+              className="w-full bg-[#1e293b] text-white border border-gray-600 px-3 py-2 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
               required
             />
           </div>
 
+          {/* Image URL */}
           <div>
-            <label className="block text-gray-700 text-sm mb-1">Image URL</label>
+            <label className="block text-sm mb-1 text-gray-300">Image URL</label>
             <input
               type="text"
-              className="w-full border px-3 py-2 rounded"
+              className="w-full bg-[#1e293b] text-white border border-gray-600 px-3 py-2 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
               value={image}
               onChange={(e) => setImage(e.target.value)}
             />
           </div>
 
           {/* Availability toggle */}
-          <div className="flex items-center gap-3 mt-2">
-            <span className="text-sm text-gray-700">Available:</span>
-            <label className="inline-flex relative items-center cursor-pointer">
+          <div className="flex items-center justify-between mt-3">
+            <span className="text-sm text-gray-300">Available:</span>
+            <label className="inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 className="sr-only peer"
                 checked={available}
                 onChange={() => setAvailable(!available)}
               />
-              <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
-              <span className="ml-2 text-sm text-gray-700">
+              <div className="w-12 h-6 bg-gray-600 rounded-full peer-checked:bg-green-500 relative transition-all">
+                <span
+                  className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 ${
+                    available ? "translate-x-6" : ""
+                  }`}
+                ></span>
+              </div>
+              <span className="ml-2 text-sm">
                 {available ? "Yes" : "No"}
               </span>
             </label>
           </div>
 
-          <div className="flex justify-end gap-3 mt-4">
+          {/* Buttons */}
+          <div className="flex justify-end gap-3 mt-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition disabled:opacity-70"
             >
               {loading ? "Saving..." : product ? "Update" : "Add"}
             </button>

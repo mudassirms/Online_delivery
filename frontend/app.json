@@ -1,24 +1,38 @@
 {
   "expo": {
-    "name": "TownDrop",
-    "slug": "towndrop-frontend",
+    "name": "frontend",
+    "slug": "frontend",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.towndrop.frontend"
+      "edgeToEdgeEnabled": true,
+      "package": "com.mudassirms.frontend"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "5a1f9d79-0330-4ef5-a23f-b7e920f3c677"
+      }
     },
     "plugins": [
-      "expo-router"
+      "expo-asset"
     ]
   }
 }

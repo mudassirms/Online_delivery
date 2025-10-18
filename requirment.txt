@@ -11,3 +11,10 @@ export const API_BASE = 'http://10.54.10.246:8005';
 
 run this command python -m alembic -c backend/alembic.ini revision --autogenerate -m "initial commit" for database alembic initialization
 next step : python -m alembic -c backend/alembic.ini upgrade head    run this command 
+
+for notifivation updtes 
+in backend 
+install dependencies :
+"pip install passlib[bcrypt]"
+
+"pip install python-jose"

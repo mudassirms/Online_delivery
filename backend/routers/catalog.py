@@ -1,4 +1,3 @@
-# catalog.py
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session, selectinload
 from typing import List
@@ -10,9 +9,7 @@ from typing import Dict
 
 router = APIRouter(prefix="/catalog", tags=["Catalog"])
 
-# -------------------
 # Categories
-# -------------------
 @router.get("/stats", response_model=Dict[str, int])
 def get_stats(
     db: Session = Depends(get_db),
@@ -25,7 +22,6 @@ def get_stats(
     total_products = 0
 
     if current_user.role == "admin":
-        # Admin: count only their store products and orders
         store_ids = [
             store.id
             for store in db.query(models.Store).filter(models.Store.owner_id == current_user.id).all()
@@ -34,10 +30,10 @@ def get_stats(
             total_products = db.query(models.Product).filter(models.Product.store_id.in_(store_ids)).count()
             total_orders = db.query(models.Order).filter(models.Order.store_id.in_(store_ids)).count()
     else:
-        # Normal user: count their own orders
         total_orders = db.query(models.Order).filter(models.Order.user_id == current_user.id).count()
 
     return {"totalOrders": total_orders, "totalProducts": total_products}
+
 
 @router.get("/categories", response_model=List[schemas.CategoryOut])
 def get_categories(
@@ -50,11 +46,9 @@ def get_categories(
             category_ids = list(set(store.category_id for store in stores))
             categories = db.query(models.Category).filter(models.Category.id.in_(category_ids)).all()
         else:
-        # ✅ If no stores yet, return all categories
             categories = db.query(models.Category).all()
     else:
         categories = db.query(models.Category).all()
-
 
     return categories
 
@@ -85,9 +79,7 @@ def update_category(category_id: int, category: schemas.CategoryUpdate, db: Sess
     return db_category
 
 
-# -------------------
 # Stores
-# -------------------
 
 @router.get("/categories/{category_id}/stores", response_model=List[schemas.StoreOut])
 def get_stores_by_category(category_id: int, db: Session = Depends(get_db)):
@@ -96,10 +88,12 @@ def get_stores_by_category(category_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Category not found")
     return category.stores
 
+
 @router.get("/categories/all", response_model=List[schemas.CategoryOut])
 def get_all_categories(db: Session = Depends(get_db)):
     """Return all categories (for adding a store)"""
     return db.query(models.Category).all()
+
 
 
 @router.get("/stores/my", response_model=List[schemas.StoreOut])
@@ -118,19 +112,17 @@ def create_store(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """✅ Create a store and assign it to the logged-in admin"""
+    """ Create a store and assign it to the logged-in admin"""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Only admins can create stores")
-
     db_store = db.query(models.Store).filter_by(name=store.name, category_id=store.category_id).first()
     if db_store:
         raise HTTPException(status_code=400, detail="Store already exists in this category")
-
     new_store = models.Store(
         name=store.name,
         image=store.image,
         category_id=store.category_id,
-        owner_id=current_user.id  # 👈 Set owner
+        owner_id=current_user.id
     )
     db.add(new_store)
     db.commit()
@@ -148,8 +140,6 @@ def update_store(
     db_store = db.query(models.Store).filter(models.Store.id == store_id).first()
     if not db_store:
         raise HTTPException(status_code=404, detail="Store not found")
-
-    # ✅ Only the owner or admin can update
     if db_store.owner_id != current_user.id and current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Not authorized to update this store")
 
@@ -162,10 +152,7 @@ def update_store(
     return db_store
 
 
-# -------------------
 # Products
-# -------------------
-
 @router.get("/stores/{store_id}/products", response_model=List[schemas.ProductOut])
 def get_products_by_store(
     store_id: int,
@@ -176,20 +163,14 @@ def get_products_by_store(
     store = db.query(models.Store).filter(models.Store.id == store_id).first()
     if not store:
         raise HTTPException(status_code=404, detail="Store not found")
-
-    # Admin can only access their own store
     if current_user.role == "admin" and store.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to access this store")
-
-    # Query products explicitly from DB
     query = db.query(models.Product).filter(models.Product.store_id == store_id)
 
     if q:
         query = query.filter(models.Product.name.ilike(f"%{q}%"))
 
     products = query.all()
-
-    # Ensure all products have 'available' as boolean
     for p in products:
         if p.available is None:
             p.available = False
@@ -276,10 +257,7 @@ def patch_product(
     return db_product
 
 
-# -------------------
 # Cart
-# -------------------
-
 @router.post("/cart", response_model=schemas.CartOut)
 def add_to_cart(
     cart_data: schemas.CartCreate,
@@ -289,28 +267,21 @@ def add_to_cart(
     product = db.query(models.Product).filter(models.Product.id == cart_data.product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-
-    # Check if item already exists in cart for this user
     cart_item = db.query(models.Cart).filter_by(
         user_id=current_user.id, 
         product_id=cart_data.product_id
     ).first()
     if not product.store_id:
         raise HTTPException(status_code=400, detail="Product does not belong to a store")
-
-
     if cart_item:
-        # If exists, update quantity
         cart_item.quantity += cart_data.quantity
     else:
-        # Create new cart item
         cart_item = models.Cart(
             user_id=current_user.id,
             product_id=cart_data.product_id,
             quantity=cart_data.quantity
         )
         db.add(cart_item)
-
     db.commit()
     db.refresh(cart_item)
     return db.query(models.Cart).options(selectinload(models.Cart.product)).filter(models.Cart.id == cart_item.id).first()
@@ -332,45 +303,39 @@ def remove_from_cart(
 ):
     cart_item = db.query(models.Cart).filter(models.Cart.id == cart_id, models.Cart.user_id == current_user.id).first()
     if not cart_item:
-        # Avoid 404 if already deleted
         return {"message": "Item already removed or does not exist"}
     db.delete(cart_item)
     db.commit()
     return {"message": "Item removed"}
 
 
-# -------------------
 # Orders
-# -------------------
-
 @router.post("/orders", response_model=schemas.OrderOut)
 def create_order(
     order_data: schemas.OrderCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # Get all cart items for user
     cart_items = db.query(models.Cart).options(selectinload(models.Cart.product)).filter(models.Cart.user_id == current_user.id).all()
     if not cart_items:
         raise HTTPException(status_code=400, detail="Cart is empty")
 
     total_price = sum(item.product.price * item.quantity for item in cart_items)
-
     store_id = cart_items[0].product.store_id
 
-    # Create order
+    # create order including payment_method
     order = models.Order(
         user_id=current_user.id,
         address_id=order_data.address_id,
         total_price=total_price,
         status="pending",
-        store_id=store_id
+        store_id=store_id,
+        payment_method=order_data.payment_method  # store payment method
     )
     db.add(order)
     db.commit()
     db.refresh(order)
 
-    # Create order items
     for item in cart_items:
         order_item = models.OrderItem(
             order_id=order.id,
@@ -380,20 +345,14 @@ def create_order(
         )
         db.add(order_item)
 
-    # Commit all order items at once
     db.commit()
-
-    # Clear cart in one go
     db.query(models.Cart).filter(models.Cart.user_id == current_user.id).delete()
     db.commit()
 
-    # Return order with items and products
     return db.query(models.Order).options(
         selectinload(models.Order.items).selectinload(models.OrderItem.product)
     ).filter(models.Order.id == order.id).first()
 
-
-from fastapi import HTTPException
 
 @router.get("/orders", response_model=List[schemas.OrderOut])
 def get_orders(
@@ -406,13 +365,11 @@ def get_orders(
     )
 
     if current_user.role == "admin":
-        # get store IDs owned by this admin
         store_ids = [store.id for store in db.query(models.Store).filter(models.Store.owner_id == current_user.id).all()]
         if not store_ids:
-            return []  # admin owns no stores
+            return []  
         query = query.filter(models.Order.store_id.in_(store_ids))
     else:
-        # normal user
         query = query.filter(models.Order.user_id == current_user.id)
 
     return query.all()

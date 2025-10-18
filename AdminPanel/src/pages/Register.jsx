@@ -17,9 +17,9 @@ export default function Register() {
 
     try {
       setLoading(true);
-      await api.post("/auth/register", { name, email, password, role: "admin" }); // ✅ Adjust endpoint as per your backend
+      await api.post("/auth/register", { name, email, password, role: "admin" });
       alert("Account created successfully! You can now log in.");
-      navigate("/login"); // ✅ Redirect to login page
+      navigate("/login");
     } catch (err) {
       console.error(err.response?.data || err.message);
       alert("Registration failed. Please try again.");
@@ -29,47 +29,53 @@ export default function Register() {
   };
 
   return (
-    <div className="h-screen flex justify-center items-center bg-gray-100">
-      <div className="bg-white p-8 rounded shadow-md w-96">
-        <h1 className="text-2xl font-bold mb-4">Admin Registration</h1>
+    <div className="h-screen flex justify-center items-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <div className="bg-gray-900/90 backdrop-blur-md p-10 rounded-3xl shadow-xl w-96 text-gray-100">
+        <h1 className="text-3xl font-bold mb-6 text-cyan-400 text-center drop-shadow-md">
+          Admin Registration
+        </h1>
 
-        <input
-          type="text"
-          placeholder="Full Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full p-2 border rounded mb-4"
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-2 border rounded mb-4"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 border rounded mb-4"
-        />
+        <div className="space-y-4">
+          <input
+            type="text"
+            placeholder="Full Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition"
+          />
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition"
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition"
+          />
+        </div>
 
         <button
           onClick={handleRegister}
           disabled={loading}
-          className={`w-full ${
-            loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
-          } text-white p-2 rounded`}
+          className={`w-full mt-6 py-3 rounded-lg font-semibold text-white ${
+            loading
+              ? "bg-gray-600 cursor-not-allowed"
+              : "bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-blue-600 hover:to-cyan-500 shadow-lg transition-all"
+          }`}
         >
           {loading ? "Registering..." : "Register"}
         </button>
 
-        <p className="text-center mt-4 text-sm">
+        <p className="text-center mt-5 text-sm text-gray-400">
           Already have an account?{" "}
           <span
             onClick={() => navigate("/login")}
-            className="text-blue-600 hover:underline cursor-pointer"
+            className="text-cyan-400 hover:underline cursor-pointer transition"
           >
             Login
           </span>

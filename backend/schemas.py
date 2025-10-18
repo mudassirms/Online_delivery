@@ -160,6 +160,7 @@ class OrderItemOut(BaseModel):
 
 class OrderCreate(BaseModel):
     address_id: int
+    payment_method: Optional[str] = "cod"
 
 
 class OrderOut(BaseModel):
@@ -170,7 +171,7 @@ class OrderOut(BaseModel):
     created_at: datetime
     address_id: int
     items: List[OrderItemOut]
-
+    payment_method: str
     class Config:
         orm_mode = True
 
