@@ -18,3 +18,9 @@ install dependencies :
 "pip install passlib[bcrypt]"
 
 "pip install python-jose"
+"pip install fastapi"
+"pip install python-multipart"
+pip install "pydantic[email]" 
+pip install "uvicorn[standard]"
+pip isntall pymysql
+pip install SQLAlchemy
