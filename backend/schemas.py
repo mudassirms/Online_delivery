@@ -199,3 +199,4 @@ class AddressOut(AddressBase):
 
     class Config:
         orm_mode = True
+

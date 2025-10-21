@@ -16,6 +16,8 @@ class User(Base):
     orders = relationship("Order", back_populates="user")
     cart_items = relationship("Cart", back_populates="user")
     logins = relationship("LoginHistory", back_populates="user")
+    notifications = relationship("Notification", back_populates="user", cascade="all, delete")
+
 
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
@@ -120,3 +122,15 @@ class Address(Base):
     longitude = Column(Float, nullable=True)
 
     user = relationship("User", back_populates="addresses")
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    title = Column(String(300))
+    message = Column(String(1000))
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="notifications")

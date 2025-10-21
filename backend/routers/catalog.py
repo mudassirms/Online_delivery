@@ -9,7 +9,16 @@ from typing import Dict
 
 router = APIRouter(prefix="/catalog", tags=["Catalog"])
 
-# Categories
+def send_notification(db: Session, user_id: int, title: str, message: str):
+    """Store notification in DB or trigger push message."""
+    notification = models.Notification(
+        user_id=user_id,
+        title=title,
+        message=message
+    )
+    db.add(notification)
+    db.commit()
+
 @router.get("/stats", response_model=Dict[str, int])
 def get_stats(
     db: Session = Depends(get_db),
@@ -17,7 +26,6 @@ def get_stats(
 ):
     """Return dashboard statistics based on user role."""
 
-    # Default values
     total_orders = 0
     total_products = 0
 
@@ -323,14 +331,13 @@ def create_order(
     total_price = sum(item.product.price * item.quantity for item in cart_items)
     store_id = cart_items[0].product.store_id
 
-    # create order including payment_method
     order = models.Order(
         user_id=current_user.id,
         address_id=order_data.address_id,
         total_price=total_price,
         status="pending",
         store_id=store_id,
-        payment_method=order_data.payment_method  # store payment method
+        payment_method=order_data.payment_method  
     )
     db.add(order)
     db.commit()
@@ -375,10 +382,45 @@ def get_orders(
     return query.all()
 
 
-# -------------------
-# Addresses
-# -------------------
 
+@router.patch("/orders/{order_id}", response_model=schemas.OrderOut)
+def patch_order(
+    order_id: int,
+    data: dict = Body(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """✅ Admin can update order fields (like status) and notify the user."""
+    order = db.query(models.Order).options(selectinload(models.Order.user)).filter(models.Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    # Check if user has permission (admin or store owner)
+    store = db.query(models.Store).filter(models.Store.id == order.store_id).first()
+    if store.owner_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to update this order")
+
+    # Update fields dynamically
+    for key, value in data.items():
+        if hasattr(order, key):
+            setattr(order, key, value)
+
+    db.commit()
+    db.refresh(order)
+
+    # ✅ Send notification to user when status changes
+    if "status" in data:
+        send_notification(
+            db=db,
+            user_id=order.user_id,
+            title=f"Order #{order.id} {data['status'].capitalize()}",
+            message=f"Your order status has been updated to '{data['status']}'."
+        )
+
+    return order
+
+
+# Addresses
 @router.post("/addresses", response_model=schemas.AddressOut)
 def add_address(
     address: schemas.AddressCreate,
