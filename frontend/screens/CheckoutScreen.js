@@ -1,7 +1,16 @@
 import React, { useState } from 'react';
-import { 
-  View, Text, TextInput, TouchableOpacity, Alert, 
-  ScrollView, ActivityIndicator, StyleSheet 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+  ActivityIndicator,
+  StyleSheet,
+  SafeAreaView,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { useCart } from '../context/CartContext';
 import api from '../services/api';
@@ -10,11 +19,13 @@ export default function CheckoutScreen({ navigation }) {
   const { cart, setCart, fetchCart, total } = useCart();
   const [address, setAddress] = useState('123, Main Street, Town');
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState(null); // initially null
+  const [paymentMethod, setPaymentMethod] = useState(null);
 
   const placeOrder = async () => {
-    if (!cart.length) return Alert.alert('Cart empty', 'Add items before checkout.');
-    if (!paymentMethod) return Alert.alert('Select Payment', 'Please select a payment method.');
+    if (!cart.length)
+      return Alert.alert('Cart empty', 'Add items before checkout.');
+    if (!paymentMethod)
+      return Alert.alert('Select Payment', 'Please select a payment method.');
 
     setLoading(true);
     try {
@@ -25,7 +36,6 @@ export default function CheckoutScreen({ navigation }) {
         return;
       }
 
-      // Create address
       const resAddress = await api.post('/catalog/addresses', {
         address_line: address,
         city: 'Town',
@@ -34,12 +44,11 @@ export default function CheckoutScreen({ navigation }) {
       });
       const addressId = resAddress.data.id;
 
-      // Place order with payment method
       const resOrder = await api.post('/catalog/orders', {
         address_id: addressId,
         store_id: storeId,
         payment_method: paymentMethod,
-        items: cart.map(item => ({
+        items: cart.map((item) => ({
           product_id: item.product.id,
           quantity: item.quantity,
         })),
@@ -50,7 +59,7 @@ export default function CheckoutScreen({ navigation }) {
       fetchCart();
 
       Alert.alert(
-        'Order placed',
+        'Order Placed 🎉',
         `Order #${resOrder.data.id} placed successfully with ${paymentMethod.toUpperCase()}`
       );
       navigation.navigate('Orders');
@@ -63,142 +72,251 @@ export default function CheckoutScreen({ navigation }) {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Checkout</Text>
+    <SafeAreaView
+      style={[
+        styles.safeArea,
+        { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 8 : 8 },
+      ]}
+    >
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 60 }}
+      >
+        <View style={styles.card}>
+          <Text style={styles.header}>🧾 Checkout</Text>
 
-        {/* Delivery Address */}
-        <Text style={styles.sectionTitle}>Delivery Address</Text>
-        <TextInput
-          value={address}
-          onChangeText={setAddress}
-          placeholder="Enter full address"
-          multiline
-          style={styles.textInput}
-        />
+          {/* Address Section */}
+          <Text style={styles.sectionTitle}>Delivery Address</Text>
+          <TextInput
+            value={address}
+            onChangeText={setAddress}
+            placeholder="Enter your complete address"
+            multiline
+            style={styles.textInput}
+            placeholderTextColor="#888"
+          />
 
-        {/* Payment Method */}
-        <Text style={styles.sectionTitle}>Payment Method</Text>
-        <View style={styles.paymentOption}>
+          {/* Payment Options */}
+          <Text style={styles.sectionTitle}>Payment Method</Text>
           <TouchableOpacity
+            activeOpacity={0.8}
             style={[
-              styles.radioButton,
-              paymentMethod === 'cod' && styles.radioSelected
+              styles.paymentOption,
+              paymentMethod === 'cod' && styles.paymentSelected,
             ]}
             onPress={() => setPaymentMethod('cod')}
           >
-            <Text style={styles.radioText}>Cash on Delivery (COD)</Text>
+            <Text
+              style={[
+                styles.paymentText,
+                paymentMethod === 'cod' && styles.paymentTextSelected,
+              ]}
+            >
+              💵 Cash on Delivery (COD)
+            </Text>
+          </TouchableOpacity>
+
+          {/* Summary */}
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryRowContainer}>
+              <Text style={styles.summaryLabel}>Items in Cart</Text>
+              <Text style={styles.summaryValue}>{cart.length}</Text>
+            </View>
+            <View style={styles.summaryRowContainer}>
+              <Text style={styles.summaryLabel}>Total Amount</Text>
+              <Text style={styles.summaryValue}>₹ {total.toFixed(2)}</Text>
+            </View>
+          </View>
+
+          {/* Place Order Button */}
+          <TouchableOpacity
+            style={[
+              styles.orderButton,
+              (loading || !paymentMethod) && styles.disabledButton,
+            ]}
+            disabled={loading || !paymentMethod}
+            onPress={placeOrder}
+            activeOpacity={0.9}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.orderButtonText}>
+                {paymentMethod ? 'Place Order' : 'Select Payment Method'}
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
 
-        {/* Order Summary */}
-        <View style={styles.summary}>
-          <Text style={styles.summaryText}>
-            Items in Cart: <Text style={styles.bold}>{cart.length}</Text>
-          </Text>
-          <Text style={styles.summaryText}>
-            Total: <Text style={styles.bold}>₹ {total.toFixed(2)}</Text>
-          </Text>
-        </View>
-
-        {/* Place Order Button */}
-        <TouchableOpacity
-          style={[styles.button, (loading || !paymentMethod) && styles.buttonDisabled]}
-          disabled={loading || !paymentMethod}
-          onPress={placeOrder}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>
-              {paymentMethod ? "Place Order" : "Select Payment Method"}
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Cart Items Preview */}
-      {cart.length > 0 && (
-        <View style={{ marginTop: 24 }}>
-          <Text style={[styles.sectionTitle, { marginBottom: 8 }]}>Your Items</Text>
-          {cart.map((item, index) => (
-            <View key={index} style={styles.cartItem}>
-              <View>
-                <Text style={styles.cartItemName}>{item.product?.name}</Text>
-                <Text style={styles.cartItemQty}>Qty: {item.quantity}</Text>
+        {/* Items List */}
+        {cart.length > 0 && (
+          <View style={styles.itemsContainer}>
+            <Text style={styles.itemsHeader}>🛍️ Your Items</Text>
+            {cart.map((item, index) => (
+              <View key={index} style={styles.itemCard}>
+                <View>
+                  <Text style={styles.itemName}>{item.product?.name}</Text>
+                  <Text style={styles.itemQty}>Qty: {item.quantity}</Text>
+                </View>
+                <Text style={styles.itemPrice}>
+                  ₹ {(item.product?.price * item.quantity).toFixed(2)}
+                </Text>
               </View>
-              <Text style={styles.cartItemPrice}>
-                ₹ {(item.product?.price * item.quantity).toFixed(2)}
-              </Text>
-            </View>
-          ))}
-        </View>
-      )}
-    </ScrollView>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212', padding: 16 },
-  card: {
-    backgroundColor: '#1e1e1e',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0F0F0F',
   },
-  title: { fontSize: 22, fontWeight: '700', color: '#FF6B00', marginBottom: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#fff', marginBottom: 8 },
+  container: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  card: {
+    backgroundColor: '#1A1A1A',
+    borderRadius: 18,
+    padding: 20,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,0,0.15)',
+    shadowColor: '#FF6B00',
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FF6B00',
+    marginBottom: 20,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 8,
+  },
   textInput: {
     borderWidth: 1,
     borderColor: '#333',
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 12,
-    minHeight: 100,
+    minHeight: 90,
     textAlignVertical: 'top',
     marginBottom: 20,
-    backgroundColor: '#1a1a1a',
     color: '#fff',
+    backgroundColor: '#141414',
   },
-  paymentOption: { marginBottom: 20 },
-  radioButton: {
-    padding: 12,
+  paymentOption: {
     borderWidth: 1,
     borderColor: '#333',
     borderRadius: 10,
-    marginBottom: 10,
-  },
-  radioSelected: { backgroundColor: '#FF6B00', borderColor: '#FF6B00' },
-  radioText: { color: '#fff', fontWeight: '600' },
-  summary: {
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#333',
-    marginBottom: 20,
-  },
-  summaryText: { fontSize: 16, color: '#fff', marginVertical: 2 },
-  bold: { fontWeight: 'bold', color: '#FF6B00' },
-  button: {
-    backgroundColor: '#FF6B00',
     paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
+    paddingHorizontal: 12,
+    backgroundColor: '#141414',
+    marginBottom: 16,
   },
-  buttonDisabled: { backgroundColor: '#999' },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  cartItem: {
-    backgroundColor: '#1e1e1e',
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 10,
+  paymentSelected: {
+    backgroundColor: '#FF6B00',
+    borderColor: '#FF6B00',
+    shadowColor: '#FF6B00',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  paymentText: {
+    color: '#ccc',
+    fontWeight: '600',
+  },
+  paymentTextSelected: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  summaryCard: {
+    backgroundColor: '#141414',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,0,0.15)',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 22,
+  },
+  summaryRowContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    marginVertical: 4,
   },
-  cartItemName: { fontSize: 16, fontWeight: '500', color: '#fff' },
-  cartItemQty: { color: '#bbb', marginTop: 2 },
-  cartItemPrice: { fontWeight: 'bold', color: '#FF6B00' },
+  summaryLabel: {
+    fontSize: 15,
+    color: '#ccc',
+    fontWeight: '600',
+  },
+  summaryValue: {
+    fontSize: 16,
+    color: '#FF6B00',
+    fontWeight: '700',
+  },
+  orderButton: {
+    backgroundColor: '#FF6B00',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#FF6B00',
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  disabledButton: {
+    backgroundColor: '#555',
+    shadowOpacity: 0,
+  },
+  orderButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  itemsContainer: {
+    marginTop: 10,
+    paddingBottom: 40,
+  },
+  itemsHeader: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FF6B00',
+    marginBottom: 12,
+  },
+  itemCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#1A1A1A',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,0,0.1)',
+  },
+  itemName: {
+    fontSize: 15,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  itemQty: {
+    color: '#aaa',
+    marginTop: 2,
+  },
+  itemPrice: {
+    color: '#FF6B00',
+    fontWeight: '700',
+  },
 });

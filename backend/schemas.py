@@ -48,6 +48,7 @@ class StoreBase(BaseModel):
     name: str
     image: Optional[str] = None
     category_id: int
+    contact_number: Optional[str] = None
 
 
 class StoreCreate(StoreBase):
@@ -57,6 +58,7 @@ class StoreCreate(StoreBase):
 class StoreUpdate(BaseModel):
     name: Optional[str] = None
     image: Optional[str] = None
+    contact_number: Optional[str] = None
 
 
 class StoreOut(StoreBase):

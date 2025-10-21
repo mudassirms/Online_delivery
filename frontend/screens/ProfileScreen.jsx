@@ -1,7 +1,10 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, ScrollView } from 'react-native';
+import { 
+  View, Text, TouchableOpacity, ActivityIndicator, 
+  StyleSheet, ScrollView 
+} from 'react-native';
 import { AuthContext } from '../context/AuthContext';
-import api from '../services/api'; // axios instance with interceptors
+import api from '../services/api';
 
 export default function ProfileScreen({ navigation }) {
   const { logout } = useContext(AuthContext);
@@ -20,13 +23,10 @@ export default function ProfileScreen({ navigation }) {
         setLoading(false);
       }
     };
-
     fetchUser();
   }, []);
 
-  const handleLogout = () => {
-    logout();
-  };
+  const handleLogout = () => logout();
 
   if (loading) {
     return (
@@ -44,19 +44,55 @@ export default function ProfileScreen({ navigation }) {
     );
   }
 
+  // Generate initials for avatar
+  const initials = user.name
+    ? user.name.split(' ').map(n => n[0]).join('').toUpperCase()
+    : '?';
+
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.header}>Profile</Text>
+      <Text style={styles.header}>👤 Profile</Text>
 
+      {/* Profile Card */}
       <View style={styles.card}>
-        <Text style={styles.labelTitle}>Name</Text>
-        <Text style={styles.labelValue}>{user.name}</Text>
+        <View style={styles.avatarContainer}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initials}</Text>
+          </View>
+          <View style={styles.userInfo}>
+            <Text style={styles.userName}>{user.name}</Text>
+            <Text style={styles.userEmail}>{user.email}</Text>
+          </View>
+        </View>
 
-        <Text style={[styles.labelTitle, { marginTop: 16 }]}>Email</Text>
-        <Text style={styles.labelValue}>{user.email}</Text>
+        <View style={styles.divider} />
+
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>User ID</Text>
+          <Text style={styles.value}>{user.id || 'N/A'}</Text>
+        </View>
+
+        {user.phone && (
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Phone</Text>
+            <Text style={styles.value}>{user.phone}</Text>
+          </View>
+        )}
+
+        {user.role && (
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Role</Text>
+            <Text style={styles.value}>{user.role}</Text>
+          </View>
+        )}
       </View>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+      {/* Logout Button */}
+      <TouchableOpacity
+        style={styles.logoutButton}
+        onPress={handleLogout}
+        activeOpacity={0.85}
+      >
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -66,28 +102,66 @@ export default function ProfileScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: '#0F0F0F',
     padding: 16,
   },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
-  header: { fontSize: 24, fontWeight: '700', color: '#FF6B00', textAlign: 'center', marginBottom: 24 },
-  card: {
-    backgroundColor: '#1e1e1e',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0F0F0F' },
+  header: { 
+    fontSize: 26, 
+    fontWeight: '700', 
+    color: '#FF6B00', 
+    textAlign: 'center', 
+    marginBottom: 24 
   },
-  labelTitle: { fontSize: 14, color: '#bbb', fontWeight: '500' },
-  labelValue: { fontSize: 18, color: '#fff', fontWeight: '600', marginTop: 4 },
+  card: {
+    backgroundColor: '#1A1A1A',
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#FF6B00',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  avatarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  avatar: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#FF6B00',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  avatarText: { color: '#fff', fontSize: 26, fontWeight: '700' },
+  userInfo: { flex: 1 },
+  userName: { fontSize: 20, fontWeight: '700', color: '#fff', marginBottom: 4 },
+  userEmail: { fontSize: 15, color: '#bbb' },
+  divider: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+    marginVertical: 12,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 6,
+  },
+  label: { fontSize: 14, color: '#aaa' },
+  value: { fontSize: 15, fontWeight: '600', color: '#fff' },
   logoutButton: {
     marginTop: 30,
     backgroundColor: '#FF6B00',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
+    shadowColor: '#FF6B00',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   logoutText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   emptyText: { color: '#bbb', fontSize: 16 },

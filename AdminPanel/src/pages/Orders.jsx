@@ -96,6 +96,10 @@ export default function AdminOrders() {
               <span className="font-medium text-gray-100">Customer: </span>
               {order.user?.name || "N/A"}
             </div>
+            <div className="mb-3 text-gray-300">
+              <span className="font-medium text-gray-100">Address: </span>
+              {order.address?.address_line || "N/A"}
+            </div>
 
             <div className="mb-3 text-gray-300">
               <span className="font-medium text-gray-100">Products: </span>

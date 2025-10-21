@@ -14,6 +14,7 @@ export default function Dashboard() {
   const [storeName, setStoreName] = useState("");
   const [storeImage, setStoreImage] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [contact_number, setContactNumber] = useState("");
   const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
 
@@ -60,6 +61,7 @@ export default function Dashboard() {
       const res = await api.post("/catalog/stores", {
         name: storeName,
         image: storeImage,
+        contact: contact_number,
         category_id: parseInt(categoryId),
       });
       setStats((prev) => ({
@@ -69,6 +71,7 @@ export default function Dashboard() {
       setShowModal(false);
       setStoreName("");
       setStoreImage("");
+      setContactNumber("");
       setCategoryId("");
       alert("Store added successfully!");
     } catch (err) {
@@ -161,6 +164,13 @@ export default function Dashboard() {
                     placeholder="Store Image URL (optional)"
                     value={storeImage}
                     onChange={(e) => setStoreImage(e.target.value)}
+                    className="w-full p-3 border border-gray-700 rounded-xl mb-4 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Contact Number (optional)"   
+                    value={contact_number}
+                    onChange={(e) => setContactNumber(e.target.value)}
                     className="w-full p-3 border border-gray-700 rounded-xl mb-4 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                   <select

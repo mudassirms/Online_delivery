@@ -54,7 +54,8 @@ class Store(Base):
     name = Column(String(100), index=True, nullable=False)
     image = Column(String(255), nullable=True)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
-    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # 👈 NEW LINE
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)  
+    contact_number = Column(String(15), nullable=True)
 
     category = relationship("Category", back_populates="stores")
     products = relationship("Product", back_populates="store")

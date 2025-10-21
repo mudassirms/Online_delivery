@@ -129,6 +129,7 @@ def create_store(
     new_store = models.Store(
         name=store.name,
         image=store.image,
+        contact_number=store.contact_number,
         category_id=store.category_id,
         owner_id=current_user.id
     )
@@ -155,6 +156,9 @@ def update_store(
         db_store.name = store.name
     if store.image:
         db_store.image = store.image
+    if store.contact_number:
+        db_store.contact_number = store.contact_number
+
     db.commit()
     db.refresh(db_store)
     return db_store
