@@ -16,13 +16,14 @@ import { useCart } from "../context/CartContext";
 const { width } = Dimensions.get("window");
 
 export default function ProductsScreen({ route, navigation }) {
-  const { storeId, storeName } = route.params;
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { storeId, storeName, popularProducts } = route.params || {};
+  const [products, setProducts] = useState(popularProducts || []);
+  const [loading, setLoading] = useState(!popularProducts);
   const { addToCart } = useCart();
 
   useEffect(() => {
     const loadProducts = async () => {
+      if (popularProducts) return; // Skip API if products passed directly
       try {
         const res = await api.get(`/catalog/stores/${storeId}/products`);
         setProducts(res.data);
@@ -33,7 +34,7 @@ export default function ProductsScreen({ route, navigation }) {
       }
     };
     loadProducts();
-  }, [storeId]);
+  }, [storeId, popularProducts]);
 
   if (loading) {
     return (
@@ -48,27 +49,17 @@ export default function ProductsScreen({ route, navigation }) {
 
     return (
       <View style={styles.card}>
-        <Image
-          source={{ uri: item.image }}
-          style={styles.image}
-          resizeMode="cover"
-        />
+        <Image source={{ uri: item.image }} style={styles.image} resizeMode="cover" />
         <View style={styles.details}>
           <Text style={styles.name} numberOfLines={2}>
             {item.name}
           </Text>
           <Text style={styles.price}>₹{item.price}</Text>
-
-          {!isAvailable && (
-            <Text style={styles.unavailable}>Unavailable</Text>
-          )}
+          {!isAvailable && <Text style={styles.unavailable}>Unavailable</Text>}
 
           <View style={styles.buttonRow}>
             <TouchableOpacity
-              style={[
-                styles.addButton,
-                !isAvailable && { backgroundColor: "#555" },
-              ]}
+              style={[styles.addButton, !isAvailable && { backgroundColor: "#555" }]}
               disabled={!isAvailable}
               onPress={() => addToCart(item, 1)}
             >
@@ -79,9 +70,7 @@ export default function ProductsScreen({ route, navigation }) {
 
             <TouchableOpacity
               style={styles.detailsButton}
-              onPress={() =>
-                navigation.navigate("ProductDetail", { product: item })
-              }
+              onPress={() => navigation.navigate("ProductDetail", { product: item })}
             >
               <Text style={styles.detailsButtonText}>View</Text>
             </TouchableOpacity>
@@ -93,24 +82,26 @@ export default function ProductsScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.header}>🛒 {storeName} Products</Text>
-
-      <FlatList
-        data={products}
-        keyExtractor={(item) => String(item.id)}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
+      <Text style={styles.header}>
+        🛒 {storeName || "Popular Products"}
+      </Text>
+      {products.length === 0 ? (
+        <Text style={styles.emptyText}>No products available.</Text>
+      ) : (
+        <FlatList
+          data={products}
+          keyExtractor={(item) => String(item.id)}
+          renderItem={renderItem}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#0F0F0F",
-  },
+  container: { flex: 1, backgroundColor: "#0F0F0F" },
   center: {
     flex: 1,
     justifyContent: "center",
@@ -123,11 +114,13 @@ const styles = StyleSheet.create({
     color: "#FF6B00",
     textAlign: "center",
     paddingVertical: 16,
-    letterSpacing: 0.5,
   },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 80,
+  listContent: { paddingHorizontal: 16, paddingBottom: 80 },
+  emptyText: {
+    color: "#aaa",
+    textAlign: "center",
+    fontSize: 16,
+    marginTop: 20,
   },
   card: {
     flexDirection: "row",
@@ -141,36 +134,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 4,
   },
-  image: {
-    width: width * 0.3,
-    height: width * 0.3,
-  },
-  details: {
-    flex: 1,
-    padding: 12,
-    justifyContent: "space-between",
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#F5F5F5",
-    marginBottom: 4,
-  },
-  price: {
-    color: "#FF6B00",
-    fontWeight: "700",
-    fontSize: 15,
-    marginBottom: 6,
-  },
-  unavailable: {
-    color: "#FF4C4C",
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  buttonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
+  image: { width: width * 0.3, height: width * 0.3 },
+  details: { flex: 1, padding: 12, justifyContent: "space-between" },
+  name: { fontSize: 16, fontWeight: "600", color: "#F5F5F5", marginBottom: 4 },
+  price: { color: "#FF6B00", fontWeight: "700", fontSize: 15, marginBottom: 6 },
+  unavailable: { color: "#FF4C4C", fontWeight: "600", marginBottom: 8 },
+  buttonRow: { flexDirection: "row", justifyContent: "space-between" },
   addButton: {
     flex: 1,
     backgroundColor: "#FF6B00",
@@ -179,11 +148,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 8,
   },
-  addButtonText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 14,
-  },
+  addButtonText: { color: "#fff", fontWeight: "700", fontSize: 14 },
   detailsButton: {
     flex: 1,
     borderWidth: 1,
@@ -192,9 +157,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  detailsButtonText: {
-    color: "#FF6B00",
-    fontWeight: "600",
-    fontSize: 14,
-  },
+  detailsButtonText: { color: "#FF6B00", fontWeight: "600", fontSize: 14 },
 });

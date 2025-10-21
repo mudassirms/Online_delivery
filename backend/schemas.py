@@ -144,6 +144,28 @@ class CartOut(BaseModel):
         orm_mode = True
 
 
+class AddressBase(BaseModel):
+    address_line: str
+    city: str
+    state: str
+    pincode: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+
+class AddressCreate(AddressBase):
+    pass
+
+
+class AddressOut(AddressBase):
+    id: int
+    user_id: int
+
+    class Config:
+        orm_mode = True
+
+
+
 # -----------------------
 # Order Schemas
 # -----------------------
@@ -169,6 +191,7 @@ class OrderOut(BaseModel):
     user: Optional[UserOut]
     status: str
     created_at: datetime
+    address: AddressOut 
     address_id: int
     items: List[OrderItemOut]
     payment_method: str
@@ -199,4 +222,3 @@ class AddressOut(AddressBase):
 
     class Config:
         orm_mode = True
-

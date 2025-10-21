@@ -1,4 +1,3 @@
-// api.js
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -11,14 +10,13 @@ const api = axios.create({
   timeout: 10000,
 });
 
-// --- Request Interceptor ---
+// --- Request Interceptor: Attach access token ---
 api.interceptors.request.use(
   async (config) => {
     try {
       const token = await AsyncStorage.getItem('token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-        // console.log('Token attached:', token);
       }
     } catch (error) {
       console.warn('Error reading token:', error);
@@ -28,7 +26,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// --- Response Interceptor (Handle 401 & refresh) ---
+// --- Response Interceptor: Handle 401 and refresh token ---
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -44,21 +42,23 @@ api.interceptors.response.use(
           throw error;
         }
 
-        // Attempt to refresh access token
+        // Refresh access token
         const res = await axios.post(`${API_BASE}/auth/refresh`, { token: refreshToken });
-        const newToken = res.data?.accessToken;
+        const newToken = res.data?.access_token;
 
         if (!newToken) throw new Error('No access token returned from refresh endpoint.');
 
+        // Save new token
         await AsyncStorage.setItem('token', newToken);
 
-        // Retry original request with new token
+        // Retry original request
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         console.log('🔁 Token refreshed — retrying request');
         return api(originalRequest);
       } catch (refreshError) {
         console.warn('Token refresh failed:', refreshError);
         await AsyncStorage.multiRemove(['token', 'refreshToken']);
+        // Optionally navigate user to login screen here
       }
     }
 

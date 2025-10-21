@@ -368,7 +368,7 @@ def get_orders(
 ):
     query = db.query(models.Order).options(
         selectinload(models.Order.items).selectinload(models.OrderItem.product),
-        selectinload(models.Order.user)
+        selectinload(models.Order.user), selectinload(models.Order.address)
     )
 
     if current_user.role == "admin":
