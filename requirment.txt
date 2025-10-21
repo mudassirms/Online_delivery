@@ -25,6 +25,8 @@ pip install "uvicorn[standard]"
 pip isntall pymysql
 pip install SQLAlchemy
 
-after adding the new column in db make migration using 
+for initial "python -m alembic -c backend/alembic.ini stamp base"
+
+if  adding the new column in db make migration using 
 "python -m alembic -c backend/alembic.ini revision --autogenerate -m "added contact_number to store"
 and then "python -m alembic -c backend/alembic.ini upgrade head"
