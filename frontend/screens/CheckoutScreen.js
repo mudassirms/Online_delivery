@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -21,8 +21,21 @@ export default function CheckoutScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState(null);
 
+  // Ensure cart is always an array to avoid 'items.filter is not a function'
+  useEffect(() => {
+    const loadCart = async () => {
+      try {
+        await fetchCart();
+      } catch (e) {
+        console.log('Error loading cart:', e.message || e);
+        setCart([]);
+      }
+    };
+    loadCart();
+  }, []);
+
   const placeOrder = async () => {
-    if (!cart.length)
+    if (!cart || !cart.length)
       return Alert.alert('Cart empty', 'Add items before checkout.');
     if (!paymentMethod)
       return Alert.alert('Select Payment', 'Please select a payment method.');
@@ -121,7 +134,7 @@ export default function CheckoutScreen({ navigation }) {
           <View style={styles.summaryCard}>
             <View style={styles.summaryRowContainer}>
               <Text style={styles.summaryLabel}>Items in Cart</Text>
-              <Text style={styles.summaryValue}>{cart.length}</Text>
+              <Text style={styles.summaryValue}>{cart?.length || 0}</Text>
             </View>
             <View style={styles.summaryRowContainer}>
               <Text style={styles.summaryLabel}>Total Amount</Text>
@@ -150,7 +163,7 @@ export default function CheckoutScreen({ navigation }) {
         </View>
 
         {/* Items List */}
-        {cart.length > 0 && (
+        {cart?.length > 0 && (
           <View style={styles.itemsContainer}>
             <Text style={styles.itemsHeader}>🛍️ Your Items</Text>
             {cart.map((item, index) => (

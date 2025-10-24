@@ -195,6 +195,7 @@ class OrderOut(BaseModel):
     created_at: datetime
     address: AddressOut 
     address_id: int
+    store_name: Optional[str] = None
     items: List[OrderItemOut]
     payment_method: str
     class Config:

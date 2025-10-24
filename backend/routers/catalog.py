@@ -124,6 +124,7 @@ def create_store(
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Only admins can create stores")
     db_store = db.query(models.Store).filter_by(name=store.name, category_id=store.category_id).first()
+    
     if db_store:
         raise HTTPException(status_code=400, detail="Store already exists in this category")
     new_store = models.Store(
@@ -334,6 +335,9 @@ def create_order(
 
     total_price = sum(item.product.price * item.quantity for item in cart_items)
     store_id = cart_items[0].product.store_id
+    store = db.query(models.Store).filter(models.Store.id == store_id).first()
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found")
 
     order = models.Order(
         user_id=current_user.id,
@@ -341,6 +345,7 @@ def create_order(
         total_price=total_price,
         status="pending",
         store_id=store_id,
+         store_name=store.name, 
         payment_method=order_data.payment_method  
     )
     db.add(order)

@@ -13,22 +13,30 @@ export const CartProvider = ({ children }) => {
   const fetchCart = async () => {
     try {
       const res = await api.get('/catalog/cart/');
-      const items = res.data || [];
+      const items = Array.isArray(res.data) ? res.data : [];
 
-      // Filter out unavailable products
-      const availableItems = items.filter(item => item.product.available);
+      // Filter out unavailable products safely
+      const availableItems = items.filter(item => item.product && item.product.available);
 
       if (availableItems.length !== items.length) {
         alert('Some items in your cart are no longer available and have been removed.');
         // Remove unavailable items from backend
-        const removedItems = items.filter(item => !item.product.available);
-        await Promise.all(removedItems.map(item => api.delete(`/catalog/cart/${item.id}`)));
+        const removedItems = items.filter(item => !item.product?.available);
+        try {
+          await Promise.all(
+            removedItems.map(item => api.delete(`/catalog/cart/${item.id}`))
+          );
+        } catch (err) {
+          console.error('Error removing unavailable items:', err);
+        }
       }
 
       setCart(availableItems);
       calculateTotal(availableItems);
     } catch (err) {
       console.error('Error fetching cart:', err);
+      setCart([]); // fallback to empty array
+      setTotal(0);
     }
   };
 
@@ -37,12 +45,16 @@ export const CartProvider = ({ children }) => {
   // -----------------------------
   const addToCart = async (product, quantity = 1) => {
     try {
-      if (!product.available) {
+      if (!product || !product.available) {
         alert('This product is currently unavailable.');
         return;
       }
 
-      await api.post('/catalog/cart/', { product_id: product.id, quantity, store_id: product.store_id, });
+      await api.post('/catalog/cart/', {
+        product_id: product.id,
+        quantity,
+        store_id: product.store_id,
+      });
       fetchCart();
     } catch (err) {
       console.error('Error adding to cart:', err);
@@ -67,6 +79,7 @@ export const CartProvider = ({ children }) => {
   // -----------------------------
   const clearCart = async () => {
     try {
+      if (!cart.length) return;
       await Promise.all(cart.map(item => api.delete(`/catalog/cart/${item.id}`)));
       setCart([]);
       setTotal(0);
@@ -79,8 +92,9 @@ export const CartProvider = ({ children }) => {
   // Calculate total
   // -----------------------------
   const calculateTotal = (cartItems) => {
+    if (!Array.isArray(cartItems)) return setTotal(0);
     const totalAmount = cartItems.reduce(
-      (sum, item) => sum + item.product.price * item.quantity,
+      (sum, item) => sum + (item.product?.price || 0) * (item.quantity || 0),
       0
     );
     setTotal(totalAmount);

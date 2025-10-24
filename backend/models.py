@@ -81,6 +81,7 @@ class Order(Base):
     address_id = Column(Integer, ForeignKey("addresses.id"), nullable=False)
     total_price = Column(Float, nullable=False)
     status = Column(String(50), default="Pending")  
+    store_name = Column(String(100), nullable=True ) 
     payment_method = Column(String(50), default="COD")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

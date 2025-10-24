@@ -100,6 +100,10 @@ export default function AdminOrders() {
               <span className="font-medium text-gray-100">Address: </span>
               {order.address?.address_line || "N/A"}
             </div>
+            <div className="mb-3 text-gray-300">
+              <span className="font-medium text-gray-100">Store : </span>
+              {order.store_name|| "N/A"}
+            </div>
 
             <div className="mb-3 text-gray-300">
               <span className="font-medium text-gray-100">Products: </span>
@@ -108,8 +112,10 @@ export default function AdminOrders() {
                   <div key={i.id} className="text-sm text-gray-400">
                     {i.quantity} × {i.product?.name || i.product_id}
                   </div>
+                  
                 ))}
               </div>
+              
             </div>
 
             <div className="mb-5 text-gray-300">
