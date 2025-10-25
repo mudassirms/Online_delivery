@@ -27,7 +27,7 @@ export default function HomeScreen({ navigation }) {
   const [filteredCategories, setFilteredCategories] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
 
-  const insets = useSafeAreaInsets(); 
+  const insets = useSafeAreaInsets();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -49,10 +49,10 @@ export default function HomeScreen({ navigation }) {
       setUser(userRes.data);
       setCategories(catRes.data);
       setBanners(bannerRes.data);
-      setPopular(popRes.data);
+      setPopular(popRes.data.slice(0, 5)); // ✅ Only first 5 products shown
 
       setFilteredCategories(catRes.data);
-      setFilteredProducts(popRes.data);
+      setFilteredProducts(popRes.data.slice(0, 5));
     } catch (e) {
       console.warn("Failed to load data", e);
     } finally {
@@ -68,7 +68,7 @@ export default function HomeScreen({ navigation }) {
     const query = searchQuery.toLowerCase();
     if (!query) {
       setFilteredCategories(categories);
-      setFilteredProducts(popular);
+      setFilteredProducts(popular.slice(0, 5));
       return;
     }
     setFilteredCategories(
@@ -182,7 +182,10 @@ export default function HomeScreen({ navigation }) {
               )}
               renderItem={({ item }) => (
                 <View style={styles.bannerWrapper}>
-                  <Image source={{ uri: item.image }} style={styles.bannerImage} />
+                  <Image
+                    source={{ uri: item.image }}
+                    style={styles.bannerImage}
+                  />
                 </View>
               )}
               contentContainerStyle={{ paddingHorizontal: 16, marginVertical: 16 }}
@@ -241,13 +244,13 @@ export default function HomeScreen({ navigation }) {
               showsHorizontalScrollIndicator={false}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={styles.productCard}
-                  activeOpacity={0.8}
+                  style={styles.cleanProductCard}
+                  activeOpacity={0.9}
                   onPress={() =>
                     navigation.navigate("ProductDetail", { product: item })
                   }
                 >
-                  <View style={styles.productCardInner}>
+                  <View>
                     {item.isNew && (
                       <View style={styles.badge}>
                         <Text style={styles.badgeText}>NEW</Text>
@@ -255,12 +258,12 @@ export default function HomeScreen({ navigation }) {
                     )}
                     <Image
                       source={{ uri: item.image }}
-                      style={styles.productImage}
+                      style={styles.cleanProductImage}
                     />
-                    <Text style={styles.productName} numberOfLines={1}>
+                    <Text style={styles.cleanProductName} numberOfLines={1}>
                       {item.name}
                     </Text>
-                    <Text style={styles.productPrice}>₹{item.price}</Text>
+                    <Text style={styles.cleanProductPrice}>₹{item.price}</Text>
                   </View>
                 </TouchableOpacity>
               )}
@@ -324,24 +327,35 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 12,
     alignItems: "center",
-    shadowColor: "#FF6B00",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
   },
   categoryImage: { width: 60, height: 60, borderRadius: 30, marginBottom: 6 },
-  categoryName: { fontSize: 12, fontWeight: "600", color: "#fff", textAlign: "center" },
-  productCard: { width: 160, marginRight: 16 },
-  productCardInner: {
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderRadius: 20,
-    padding: 12,
-    alignItems: "center",
-    shadowColor: "#FF6B00",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
+  categoryName: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#fff",
+    textAlign: "center",
   },
+
+  // ✅ Clean product cards (no back color)
+  cleanProductCard: { width: 160, marginRight: 16, alignItems: "center" },
+  cleanProductImage: {
+    width: 140,
+    height: 140,
+    borderRadius: 20,
+    marginBottom: 8,
+  },
+  cleanProductName: {
+    fontWeight: "700",
+    color: "#fff",
+    textAlign: "center",
+  },
+  cleanProductPrice: {
+    marginTop: 4,
+    color: "#FF6B00",
+    fontWeight: "700",
+    textAlign: "center",
+  },
+
   badge: {
     position: "absolute",
     top: 10,
@@ -353,9 +367,6 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   badgeText: { color: "#fff", fontWeight: "700", fontSize: 10 },
-  productImage: { width: 100, height: 100, borderRadius: 16 },
-  productName: { marginTop: 8, fontWeight: "700", color: "#fff", textAlign: "center" },
-  productPrice: { marginTop: 4, color: "#FF6B00", fontWeight: "700" },
   searchSectionTitle: { color: "#FF6B00", fontWeight: "700", marginBottom: 4 },
   searchResultItem: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
   searchResultImage: { width: 40, height: 40, borderRadius: 20, marginRight: 12 },

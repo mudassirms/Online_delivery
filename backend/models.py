@@ -12,6 +12,9 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
     role = Column(String(50), default="user") 
 
+    is_verified = Column(Boolean, default=False)  # 👈 Added
+    verification_token = Column(String(255), nullable=True)  # 👈 Added
+
     addresses = relationship("Address", back_populates="user")
     orders = relationship("Order", back_populates="user")
     cart_items = relationship("Cart", back_populates="user")
