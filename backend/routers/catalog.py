@@ -327,9 +327,14 @@ def remove_from_cart(
 def create_order(
     order_data: schemas.OrderCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user)
 ):
-    cart_items = db.query(models.Cart).options(selectinload(models.Cart.product)).filter(models.Cart.user_id == current_user.id).all()
+    cart_items = (
+        db.query(models.Cart)
+        .options(selectinload(models.Cart.product))
+        .filter(models.Cart.user_id == current_user.id)
+        .all()
+    )
     if not cart_items:
         raise HTTPException(status_code=400, detail="Cart is empty")
 
@@ -345,8 +350,9 @@ def create_order(
         total_price=total_price,
         status="pending",
         store_id=store_id,
-         store_name=store.name, 
-        payment_method=order_data.payment_method  
+        store_name=store.name,
+        payment_method=order_data.payment_method,
+        contact_number=order_data.contact_number or current_user.phone  # ✅ include phone
     )
     db.add(order)
     db.commit()
@@ -365,11 +371,17 @@ def create_order(
     db.query(models.Cart).filter(models.Cart.user_id == current_user.id).delete()
     db.commit()
 
-    return db.query(models.Order).options(
-        selectinload(models.Order.items).selectinload(models.OrderItem.product)
-    ).filter(models.Order.id == order.id).first()
+    return (
+        db.query(models.Order)
+        .options(selectinload(models.Order.items).selectinload(models.OrderItem.product),
+                 selectinload(models.Order.user),
+                 selectinload(models.Order.address))
+        .filter(models.Order.id == order.id)
+        .first()
+    )
 
 
+# --- Get Orders ---
 @router.get("/orders", response_model=List[schemas.OrderOut])
 def get_orders(
     db: Session = Depends(get_db),
@@ -377,20 +389,33 @@ def get_orders(
 ):
     query = db.query(models.Order).options(
         selectinload(models.Order.items).selectinload(models.OrderItem.product),
-        selectinload(models.Order.user), selectinload(models.Order.address)
+        selectinload(models.Order.user),
+        selectinload(models.Order.address)
     )
 
     if current_user.role == "admin":
         store_ids = [store.id for store in db.query(models.Store).filter(models.Store.owner_id == current_user.id).all()]
         if not store_ids:
-            return []  
+            return []
         query = query.filter(models.Order.store_id.in_(store_ids))
     else:
         query = query.filter(models.Order.user_id == current_user.id)
 
-    return query.all()
+    orders = query.all()
 
+    # Dynamically add 'order_title' using product names
+    for order in orders:
+        if order.items:
+            first_product = order.items[0].product.name
+            order.order_title = f"{first_product} +{len(order.items) - 1} more" if len(order.items) > 1 else first_product
+        else:
+            order.order_title = "Order"
 
+        # ✅ Ensure phone number is included in returned user object
+        if order.user:
+            order.user.phone = order.contact_number or order.user.phone
+
+    return orders
 
 @router.patch("/orders/{order_id}", response_model=schemas.OrderOut)
 def patch_order(

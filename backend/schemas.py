@@ -11,6 +11,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     role: str = "user"
+    phone: str
 
 
 class UserLogin(BaseModel):
@@ -185,6 +186,8 @@ class OrderItemOut(BaseModel):
 class OrderCreate(BaseModel):
     address_id: int
     payment_method: Optional[str] = "cod"
+    order_title: Optional[str] = None 
+    contact_number: Optional[str] = None    
 
 
 class OrderOut(BaseModel):
@@ -196,8 +199,10 @@ class OrderOut(BaseModel):
     address: AddressOut 
     address_id: int
     store_name: Optional[str] = None
+    contact_number: Optional[str]
     items: List[OrderItemOut]
     payment_method: str
+    order_title: Optional[str] = None
     class Config:
         orm_mode = True
 

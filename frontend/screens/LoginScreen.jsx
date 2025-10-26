@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,33 +8,47 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-} from 'react-native';
-import { login as apiLogin } from '../services/auth';
-import { AuthContext } from '../context/AuthContext';
+  ActivityIndicator,
+} from "react-native";
+import { login as apiLogin } from "../services/auth";
+import { AuthContext } from "../context/AuthContext";
 
 export default function LoginScreen({ navigation }) {
-  const [name, setName] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { token, login } = useContext(AuthContext);
 
+  const { userToken, login } = useContext(AuthContext);
+
+  // 🔹 Redirect to MainTabs if already logged in
   useEffect(() => {
-    if (token) {
-      navigation.replace('MainTabs');
+    if (userToken) {
+      navigation.replace("MainTabs");
     }
-  }, [token]);
+  }, [userToken]);
 
+  // 🔹 Handle Login
   const onLogin = async () => {
-    if (!name || !password) {
-      return Alert.alert('Validation', 'Please enter name and password.');
+    if (!email || !password) {
+      return Alert.alert("Validation", "Please enter email and password.");
     }
 
     setLoading(true);
     try {
-      const res = await apiLogin(name, password);
-      login(res.access_token);
-    } catch (e) {
-      Alert.alert('Login failed', 'Check your credentials or register first.');
+      // Example API: should return { token, user }
+      const res = await apiLogin(email, password);
+
+      if (res?.token) {
+        await login(res.token, res.user);
+      } else if (res?.access_token) {
+        // Fallback if backend returns access_token instead of token
+        await login(res.access_token, res.user || null);
+      } else {
+        Alert.alert("Login failed", "Invalid response from server.");
+      }
+    } catch (error) {
+      console.log("Login error:", error);
+      Alert.alert("Login failed", "Check your credentials or register first.");
     } finally {
       setLoading(false);
     }
@@ -43,18 +57,19 @@ export default function LoginScreen({ navigation }) {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <Text style={styles.title}>TownDrop</Text>
 
       <View style={styles.inputContainer}>
         <TextInput
-          placeholder="Email Id"
+          placeholder="Email ID"
           placeholderTextColor="#888"
-          value={name}
-          onChangeText={setName}
+          value={email}
+          onChangeText={setEmail}
           style={styles.input}
           autoCapitalize="none"
+          keyboardType="email-address"
         />
         <TextInput
           placeholder="Password"
@@ -71,11 +86,15 @@ export default function LoginScreen({ navigation }) {
         onPress={onLogin}
         disabled={loading}
       >
-        <Text style={styles.loginText}>{loading ? 'Logging in...' : 'Login'}</Text>
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.loginText}>Login</Text>
+        )}
       </TouchableOpacity>
 
       <TouchableOpacity
-        onPress={() => navigation.navigate('Register')}
+        onPress={() => navigation.navigate("Register")}
         style={styles.registerContainer}
       >
         <Text style={styles.registerText}>New here? Create an account</Text>
@@ -87,45 +106,45 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
-    justifyContent: 'center',
+    backgroundColor: "#121212",
+    justifyContent: "center",
     padding: 24,
   },
   title: {
     fontSize: 36,
-    fontWeight: 'bold',
-    color: '#FF6B00',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#FF6B00",
+    textAlign: "center",
     marginBottom: 40,
   },
   inputContainer: {
     marginBottom: 24,
   },
   input: {
-    backgroundColor: '#1e1e1e',
-    color: '#fff',
+    backgroundColor: "#1e1e1e",
+    color: "#fff",
     borderRadius: 12,
     padding: 14,
     marginBottom: 16,
     fontSize: 16,
   },
   loginButton: {
-    backgroundColor: '#FF6B00',
+    backgroundColor: "#FF6B00",
     paddingVertical: 14,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   loginText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   registerContainer: {
     marginTop: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   registerText: {
-    color: '#bbb',
-    textDecorationLine: 'underline',
+    color: "#bbb",
+    textDecorationLine: "underline",
   },
 });

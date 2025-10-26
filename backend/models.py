@@ -11,6 +11,8 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
     role = Column(String(50), default="user") 
+    phone = Column(String(20), nullable=True)
+
 
     is_verified = Column(Boolean, default=False)  # 👈 Added
     verification_token = Column(String(255), nullable=True)  # 👈 Added
@@ -86,7 +88,10 @@ class Order(Base):
     status = Column(String(50), default="Pending")  
     store_name = Column(String(100), nullable=True ) 
     payment_method = Column(String(50), default="COD")
+    order_title = Column(String(255), nullable=True)  # ✅ Added new column
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    contact_number = Column(String(20), nullable=True)
 
     user = relationship("User", back_populates="orders")
     address = relationship("Address")

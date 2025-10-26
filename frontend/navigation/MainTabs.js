@@ -1,9 +1,10 @@
-import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, StyleSheet, Text, Animated } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCart } from '../context/CartContext'; // ✅ import cart context
 
 import HomeScreen from '../screens/HomeScreen';
 import CartScreen from '../screens/CartScreen';
@@ -14,11 +15,21 @@ import ProductDetailsScreen from '../screens/ProductDetailScreen';
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-// 🛒 Dummy cart count (replace with context/state later)
-const cartItemCount = 3;
-
 function Tabs() {
-  const insets = useSafeAreaInsets(); // ✅ dynamically handle bottom safe area (Android/iPhone)
+  const insets = useSafeAreaInsets();
+  const { cart } = useCart(); // ✅ get cart from context
+  const cartItemCount = cart?.length || 0;
+
+  // Animation for cart badge
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (cartItemCount > 0) {
+      Animated.sequence([
+        Animated.timing(scaleAnim, { toValue: 1.3, duration: 100, useNativeDriver: true }),
+        Animated.timing(scaleAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [cartItemCount]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f2f2f2' }} edges={['bottom']}>
@@ -30,7 +41,7 @@ function Tabs() {
           tabBarLabelStyle: styles.tabLabel,
           tabBarStyle: [
             styles.tabBar,
-            { marginBottom: insets.bottom > 0 ? insets.bottom : 10 }, // lift tab bar above phone buttons
+            { marginBottom: insets.bottom > 0 ? insets.bottom : 10 },
           ],
           tabBarIcon: ({ focused }) => {
             let iconName;
@@ -43,9 +54,9 @@ function Tabs() {
               <View style={styles.iconContainer}>
                 <Ionicons name={iconName} size={26} color={focused ? '#1e90ff' : '#888'} />
                 {route.name === 'Cart' && cartItemCount > 0 && (
-                  <View style={styles.badge}>
+                  <Animated.View style={[styles.badge, { transform: [{ scale: scaleAnim }] }]}>
                     <Text style={styles.badgeText}>{cartItemCount}</Text>
-                  </View>
+                  </Animated.View>
                 )}
               </View>
             );
@@ -53,8 +64,8 @@ function Tabs() {
         })}
       >
         <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Cart" component={CartScreen} />
         <Tab.Screen name="Orders" component={OrderScreen} />
+        <Tab.Screen name="Cart" component={CartScreen} />
         <Tab.Screen name="Profile" component={ProfileScreen} />
       </Tab.Navigator>
     </SafeAreaView>
@@ -98,8 +109,8 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: 'absolute',
-    top: -4,
-    right: -10,
+    top: -6,
+    right: -8,
     backgroundColor: '#ff3b30',
     borderRadius: 10,
     paddingHorizontal: 5,
@@ -107,6 +118,7 @@ const styles = StyleSheet.create({
     minWidth: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 1,
   },
   badgeText: {
     color: '#fff',

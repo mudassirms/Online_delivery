@@ -11,7 +11,7 @@ export async function login(email, password) {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   });
 
-  // Save both access and refresh tokens
+  // Save access token (and refresh token if available)
   await AsyncStorage.setItem('token', res.data.access_token);
   if (res.data.refresh_token) {
     await AsyncStorage.setItem('refreshToken', res.data.refresh_token);
@@ -21,8 +21,14 @@ export async function login(email, password) {
 }
 
 // --- Register ---
-export async function register(email, password, name) {
-  const res = await api.post('/auth/register', { email, password, name });
+export async function register(email, password, name, role, phone) {
+  const res = await api.post('/auth/register', {
+    email,
+    password,
+    name,
+    role,  // ✅ include role
+    phone, // ✅ include phone
+  });
   return res.data;
 }
 

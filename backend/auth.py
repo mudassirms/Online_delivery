@@ -24,7 +24,7 @@ def create_access_token(data: dict):
 
 @router.post("/register")
 def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
-    """Register a new user with name, email, and password."""
+    """Register a new user with name, email, password, and phone."""
     existing_user = db.query(models.User).filter(models.User.email == user.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -36,7 +36,8 @@ def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
         name=user.name,
         email=user.email,
         hashed_password=hashed_password,
-        role=user.role 
+        role=user.role,
+        phone=user.phone  # ✅ Add phone
     )
 
     db.add(new_user)
@@ -49,7 +50,8 @@ def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
             "id": new_user.id,
             "name": new_user.name,
             "email": new_user.email,
-            "role": new_user.role
+            "role": new_user.role,
+            "phone": new_user.phone  # ✅ Return phone
         }
     }
 
@@ -71,7 +73,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
             "id": db_user.id,
             "name": db_user.name,
             "email": db_user.email,
-            "role": db_user.role
+            "role": db_user.role,
+            "phone": db_user.phone  # ✅ Include phone
         }
     }
 
@@ -95,5 +98,7 @@ def read_current_user(current_user: models.User = Depends(get_current_user)):
     return {
         "id": current_user.id,
         "name": current_user.name,
-        "email": current_user.email
+        "email": current_user.email,
+        "role": current_user.role,
+        "phone": current_user.phone  # ✅ Include phone
     }

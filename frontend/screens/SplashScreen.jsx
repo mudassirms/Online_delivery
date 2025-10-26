@@ -1,19 +1,42 @@
-import React, { useEffect } from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import React, { useEffect, useContext, useRef } from "react";
+import { View, Text, Image, StyleSheet, Animated, StatusBar } from "react-native";
+import { AuthContext } from "../context/AuthContext";
 
 export default function SplashScreen({ navigation }) {
+  const { userToken } = useContext(AuthContext);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
+    // 🔹 Fade-in animation
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 1200,
+      useNativeDriver: true,
+    }).start();
+
+    // 🔹 Redirect after delay
     const timeout = setTimeout(() => {
-      navigation.replace('MainTab');
-    }, 2000); // 2 seconds splash
+      if (userToken) {
+        navigation.replace("MainTabs"); // Logged in → go to home
+      } else {
+        navigation.replace("Login"); // Not logged in → go to login
+      }
+    }, 2000);
 
     return () => clearTimeout(timeout);
-  }, [navigation]);
+  }, [userToken]);
 
   return (
     <View style={styles.container}>
-      <Image source={require('../assets/logo.png')} style={styles.logo} />
-      <Text style={styles.text}>TownDrop</Text>
+      <StatusBar backgroundColor="#000" barStyle="light-content" />
+      <Animated.Image
+        source={require("../assets/town.jpg")}
+        style={[styles.logo, { opacity: fadeAnim }]}
+      />
+      <Animated.Text style={[styles.text, { opacity: fadeAnim }]}>
+        TownDrop
+      </Animated.Text>
+      <Text style={styles.tagline}>Your Town. Your Delivery.</Text>
     </View>
   );
 }
@@ -21,18 +44,25 @@ export default function SplashScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1e90ff',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#121212",
+    justifyContent: "center",
+    alignItems: "center",
   },
   logo: {
-    width: 100,
-    height: 100,
-    marginBottom: 10,
+    width: 120,
+    height: 120,
+    marginBottom: 15,
+    resizeMode: "contain",
   },
   text: {
-    fontSize: 28,
-    color: '#fff',
-    fontWeight: 'bold',
+    fontSize: 36,
+    fontWeight: "bold",
+    color: "#FF6B00",
+    letterSpacing: 1,
+  },
+  tagline: {
+    fontSize: 16,
+    color: "#ccc",
+    marginTop: 8,
   },
 });

@@ -6,37 +6,35 @@ const CartContext = createContext();
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   // -----------------------------
   // Fetch cart from backend
   // -----------------------------
   const fetchCart = async () => {
+    setLoading(true);
     try {
       const res = await api.get('/catalog/cart/');
       const items = Array.isArray(res.data) ? res.data : [];
 
-      // Filter out unavailable products safely
-      const availableItems = items.filter(item => item.product && item.product.available);
+      // Filter out unavailable products
+      const availableItems = items.filter(item => item.product?.available);
 
-      if (availableItems.length !== items.length) {
+      // Remove unavailable items from backend if any
+      const removedItems = items.filter(item => !item.product?.available);
+      if (removedItems.length) {
         alert('Some items in your cart are no longer available and have been removed.');
-        // Remove unavailable items from backend
-        const removedItems = items.filter(item => !item.product?.available);
-        try {
-          await Promise.all(
-            removedItems.map(item => api.delete(`/catalog/cart/${item.id}`))
-          );
-        } catch (err) {
-          console.error('Error removing unavailable items:', err);
-        }
+        await Promise.all(removedItems.map(item => api.delete(`/catalog/cart/${item.id}`)));
       }
 
       setCart(availableItems);
       calculateTotal(availableItems);
     } catch (err) {
       console.error('Error fetching cart:', err);
-      setCart([]); // fallback to empty array
+      setCart([]);
       setTotal(0);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -44,18 +42,24 @@ export const CartProvider = ({ children }) => {
   // Add item to cart
   // -----------------------------
   const addToCart = async (product, quantity = 1) => {
-    try {
-      if (!product || !product.available) {
-        alert('This product is currently unavailable.');
-        return;
-      }
+    if (!product || !product.available) {
+      alert('This product is currently unavailable.');
+      return;
+    }
 
+    try {
+      // ✅ Instant local update for immediate feedback
+      const tempItem = { id: Date.now(), product, quantity };
+      setCart(prev => [...prev, tempItem]);
+      calculateTotal([...cart, tempItem]);
+
+      // Then sync with backend
       await api.post('/catalog/cart/', {
         product_id: product.id,
         quantity,
         store_id: product.store_id,
       });
-      fetchCart();
+      await fetchCart(); // Refresh from backend
     } catch (err) {
       console.error('Error adding to cart:', err);
       alert(err.response?.data?.detail || 'Failed to add to cart.');
@@ -68,7 +72,9 @@ export const CartProvider = ({ children }) => {
   const removeFromCart = async (cartId) => {
     try {
       await api.delete(`/catalog/cart/${cartId}`);
-      fetchCart();
+      const updatedCart = cart.filter(item => item.id !== cartId);
+      setCart(updatedCart);
+      calculateTotal(updatedCart);
     } catch (err) {
       console.error('Error removing from cart:', err);
     }
@@ -89,7 +95,7 @@ export const CartProvider = ({ children }) => {
   };
 
   // -----------------------------
-  // Calculate total
+  // Calculate total amount
   // -----------------------------
   const calculateTotal = (cartItems) => {
     if (!Array.isArray(cartItems)) return setTotal(0);
@@ -100,20 +106,22 @@ export const CartProvider = ({ children }) => {
     setTotal(totalAmount);
   };
 
+  // Auto-recalculate total if cart changes externally
   useEffect(() => {
-    fetchCart();
-  }, []);
+    calculateTotal(cart);
+  }, [cart]);
 
   return (
     <CartContext.Provider
       value={{
         cart,
         total,
-        setCart,
+        loading,
         fetchCart,
         addToCart,
         removeFromCart,
         clearCart,
+        setCart,
       }}
     >
       {children}

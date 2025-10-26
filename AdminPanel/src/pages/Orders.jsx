@@ -33,15 +33,15 @@ export default function AdminOrders() {
     }
   };
 
-  const deleteOrder = async (id) => {
-    if (!confirm("Are you sure you want to delete this order?")) return;
-    try {
-      await api.delete(`/catalog/orders/${id}`);
-      setOrders((prev) => prev.filter((o) => o.id !== id));
-    } catch (e) {
-      console.warn("Failed to delete order", e);
-    }
-  };
+  // const deleteOrder = async (id) => {
+  //   if (!confirm("Are you sure you want to delete this order?")) return;
+  //   try {
+  //     await api.delete(`/catalog/orders/${id}`);
+  //     setOrders((prev) => prev.filter((o) => o.id !== id));
+  //   } catch (e) {
+  //     console.warn("Failed to delete order", e);
+  //   }
+  // };
 
   if (loading)
     return (
@@ -75,8 +75,9 @@ export default function AdminOrders() {
           >
             <div className="flex justify-between items-center mb-4">
               <span className="font-semibold text-lg text-cyan-400">
-                Order #{order.id}
+                {order.order_title || `Order #${order.id}`}
               </span>
+
               <span
                 className={`px-3 py-1 rounded-full text-sm font-medium capitalize ${
                   order.status === "accepted"
@@ -92,17 +93,32 @@ export default function AdminOrders() {
               </span>
             </div>
 
+            {/* Customer Info */}
             <div className="mb-3 text-gray-300">
               <span className="font-medium text-gray-100">Customer: </span>
               {order.user?.name || "N/A"}
             </div>
             <div className="mb-3 text-gray-300">
+              <span className="font-medium text-gray-100">Phone: </span>
+              {order.contact_number ? (
+    <a
+      href={`tel:${order.contact_number}`}
+      className="text-cyan-400 hover:underline"
+    >
+      {order.contact_number}
+    </a>
+  ) : (
+    "N/A"
+  )}
+            </div>
+
+            <div className="mb-3 text-gray-300">
               <span className="font-medium text-gray-100">Address: </span>
               {order.address?.address_line || "N/A"}
             </div>
             <div className="mb-3 text-gray-300">
-              <span className="font-medium text-gray-100">Store : </span>
-              {order.store_name|| "N/A"}
+              <span className="font-medium text-gray-100">Store: </span>
+              {order.store_name || "N/A"}
             </div>
 
             <div className="mb-3 text-gray-300">
@@ -112,10 +128,8 @@ export default function AdminOrders() {
                   <div key={i.id} className="text-sm text-gray-400">
                     {i.quantity} × {i.product?.name || i.product_id}
                   </div>
-                  
                 ))}
               </div>
-              
             </div>
 
             <div className="mb-5 text-gray-300">
@@ -148,12 +162,12 @@ export default function AdminOrders() {
                   Reject
                 </button>
               )}
-              <button
+              {/* <button
                 onClick={() => deleteOrder(order.id)}
                 className="bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition"
               >
                 Delete
-              </button>
+              </button> */}
             </div>
           </div>
         ))}

@@ -323,14 +323,13 @@ const styles = StyleSheet.create({
   seeAllText: { color: "#FF6B00", fontWeight: "600" },
   categoryCard: { width: 100, marginRight: 16 },
   categoryCardInner: {
-    backgroundColor: "rgba(255,255,255,0.12)",
     borderRadius: 20,
     padding: 12,
     alignItems: "center",
   },
-  categoryImage: { width: 60, height: 60, borderRadius: 30, marginBottom: 6 },
+  categoryImage: { width: 70, height: 70, borderRadius: 40, marginBottom: 8 },
   categoryName: {
-    fontSize: 12,
+    fontSize: 18,
     fontWeight: "600",
     color: "#fff",
     textAlign: "center",

@@ -1,4 +1,10 @@
-import React, { useContext } from "react";
+import React, { useContext, useRef, useEffect } from "react";
+import {
+  View,
+  Text,
+  Animated,
+  StyleSheet,
+} from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -15,15 +21,16 @@ import OrdersScreen from "./screens/OrdersScreen";
 import StoresScreen from "./screens/StoresScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 
-import { CartProvider } from "./context/CartContext";
+import { CartProvider, useCart } from "./context/CartContext";
 import { AuthProvider, AuthContext } from "./context/AuthContext";
-
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 
-// --- Each tab gets its own Stack so tab bar stays visible ---
+// -------------------------
+// ✅ Home Stack
+// -------------------------
 function HomeStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -36,6 +43,9 @@ function HomeStack() {
   );
 }
 
+// -------------------------
+// ✅ Orders Stack
+// -------------------------
 function OrdersStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -44,6 +54,9 @@ function OrdersStack() {
   );
 }
 
+// -------------------------
+// ✅ Cart Stack
+// -------------------------
 function CartStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -53,6 +66,9 @@ function CartStack() {
   );
 }
 
+// -------------------------
+// ✅ Profile Stack
+// -------------------------
 function ProfileStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -62,8 +78,24 @@ function ProfileStack() {
 }
 
 
-// --- Bottom Tabs ---
+// -------------------------
+// ✅ Main Tabs (with badge)
+// -------------------------
 function MainTabs() {
+  const { cart } = useCart();
+  const cartItemCount = cart?.length || 0;
+
+  // Animated badge effect
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (cartItemCount > 0) {
+      Animated.sequence([
+        Animated.timing(scaleAnim, { toValue: 1.3, duration: 120, useNativeDriver: true }),
+        Animated.timing(scaleAnim, { toValue: 1, duration: 120, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [cartItemCount]);
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -89,7 +121,19 @@ function MainTabs() {
           else if (route.name === "Orders") iconName = focused ? "receipt" : "receipt-outline";
           else if (route.name === "Cart") iconName = focused ? "cart" : "cart-outline";
           else if (route.name === "Profile") iconName = focused ? "person" : "person-outline";
-          return <Ionicons name={iconName} size={26} color={color} />;
+
+          return (
+            <View style={styles.iconContainer}>
+              <Ionicons name={iconName} size={26} color={color} />
+              {route.name === "Cart" && cartItemCount > 0 && (
+                <Animated.View
+                  style={[styles.badge, { transform: [{ scale: scaleAnim }] }]}
+                >
+                  <Text style={styles.badgeText}>{cartItemCount}</Text>
+                </Animated.View>
+              )}
+            </View>
+          );
         },
       })}
     >
@@ -102,11 +146,13 @@ function MainTabs() {
 }
 
 
-// --- Handles authentication ---
+// -------------------------
+// ✅ Handles Authentication
+// -------------------------
 function AppNavigator() {
   const { userToken, loading } = useContext(AuthContext);
 
-  if (loading) return null; // Could show splash screen
+  if (loading) return null; // Could show splash screen or loader
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -123,7 +169,9 @@ function AppNavigator() {
 }
 
 
-// --- Root App ---
+// -------------------------
+// ✅ Root App
+// -------------------------
 export default function App() {
   return (
     <AuthProvider>
@@ -135,3 +183,34 @@ export default function App() {
     </AuthProvider>
   );
 }
+
+
+// -------------------------
+// ✅ Styles
+// -------------------------
+const styles = StyleSheet.create({
+  iconContainer: {
+    width: 30,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badge: {
+    position: "absolute",
+    top: -5,
+    right: -10,
+    backgroundColor: "#FF3B30",
+    borderRadius: 10,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    minWidth: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1,
+  },
+  badgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+});

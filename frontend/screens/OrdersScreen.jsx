@@ -43,7 +43,7 @@ export default function OrdersScreen() {
   }, []);
 
   const getStatusColor = (status) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case "delivered":
         return "#4CAF50";
       case "pending":
@@ -58,7 +58,10 @@ export default function OrdersScreen() {
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <View style={styles.rowBetween}>
-        <Text style={styles.orderId}>Order #{item.id}</Text>
+        <Text style={styles.orderTitle}>
+          {item.order_title || "Order"}
+        </Text>
+
         <View
           style={[
             styles.statusBadge,
@@ -71,10 +74,14 @@ export default function OrdersScreen() {
           <Text
             style={[styles.statusText, { color: getStatusColor(item.status) }]}
           >
-            {item.status?.toUpperCase()}
+            {item.status?.toUpperCase() || "PENDING"}
           </Text>
         </View>
       </View>
+
+      <Text style={styles.storeName}>
+        🏬 {item.store_name || "Unknown Store"}
+      </Text>
 
       <View style={styles.divider} />
 
@@ -87,7 +94,10 @@ export default function OrdersScreen() {
         <Text style={styles.label}>Items: </Text>
         {item.items?.length
           ? item.items
-              .map((i) => `${i.quantity}× ${i.product?.name || i.product_id}`)
+              .map(
+                (i) =>
+                  `${i.quantity}× ${i.product?.name || "Unknown Product"}`
+              )
               .join(", ")
           : "No items"}
       </Text>
@@ -97,6 +107,10 @@ export default function OrdersScreen() {
         {item.address
           ? `${item.address.address_line}, ${item.address.city}, ${item.address.state} - ${item.address.pincode}`
           : "N/A"}
+      </Text>
+
+      <Text style={styles.dateText}>
+        📅 {new Date(item.created_at).toLocaleString()}
       </Text>
     </View>
   );
@@ -156,7 +170,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#0F0F0F",
   },
 
-  // HEADER WRAPPER (fixed notch-safe height)
+  // HEADER WRAPPER
   headerWrapper: {
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 6 : 0,
     backgroundColor: "#121212",
@@ -208,10 +222,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  orderId: {
+  orderTitle: {
     fontSize: 16,
     fontWeight: "700",
     color: "#fff",
+    flexShrink: 1,
+  },
+  storeName: {
+    fontSize: 13,
+    color: "#aaa",
+    marginTop: 4,
   },
   statusBadge: {
     borderWidth: 1,
@@ -236,6 +256,12 @@ const styles = StyleSheet.create({
   label: {
     color: "#FF6B00",
     fontWeight: "600",
+  },
+  dateText: {
+    color: "#888",
+    fontSize: 12,
+    marginTop: 6,
+    textAlign: "right",
   },
 
   // STATES
