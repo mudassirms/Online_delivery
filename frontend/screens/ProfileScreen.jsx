@@ -7,17 +7,19 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  SafeAreaView,
+  Platform,
+  StatusBar,
 } from "react-native";
 import { AuthContext } from "../context/AuthContext";
 import api from "../services/api";
-import * as Location from "expo-location"; // ✅ Added import
+import * as Location from "expo-location";
 
 export default function ProfileScreen({ navigation }) {
   const { logout } = useContext(AuthContext);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ New state for location info
   const [address, setAddress] = useState(null);
   const [coords, setCoords] = useState({ lat: null, lng: null });
   const [locating, setLocating] = useState(false);
@@ -37,7 +39,6 @@ export default function ProfileScreen({ navigation }) {
     fetchUser();
   }, []);
 
-  // ✅ Fetch current GPS location + reverse geocode
   const getCurrentLocation = async () => {
     try {
       setLocating(true);
@@ -84,7 +85,6 @@ export default function ProfileScreen({ navigation }) {
     );
   }
 
-  // Generate initials for avatar
   const initials = user.name
     ? user.name
         .split(" ")
@@ -94,83 +94,80 @@ export default function ProfileScreen({ navigation }) {
     : "?";
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.header}>👤 Profile</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container}>
+        <Text style={styles.header}>👤 Profile</Text>
 
-      {/* Profile Card */}
-      <View style={styles.card}>
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
+        <View style={styles.card}>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{initials}</Text>
+            </View>
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>{user.name}</Text>
+              <Text style={styles.userEmail}>{user.email}</Text>
+            </View>
           </View>
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user.name}</Text>
-            <Text style={styles.userEmail}>{user.email}</Text>
-          </View>
+
+          <View style={styles.divider} />
+
+          {user.phone && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Phone</Text>
+              <Text style={styles.value}>{user.phone}</Text>
+            </View>
+          )}
+
+          {user.role && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Role</Text>
+              <Text style={styles.value}>{user.role}</Text>
+            </View>
+          )}
+
+          {address && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Current Location</Text>
+              <Text style={[styles.value, { flex: 1, textAlign: "right" }]} numberOfLines={2}>
+                {address}
+              </Text>
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={[styles.locationBtn, locating && { opacity: 0.7 }]}
+            onPress={getCurrentLocation}
+            disabled={locating}
+            activeOpacity={0.8}
+          >
+            {locating ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.locationBtnText}>📍 Use Current Location</Text>
+            )}
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.divider} />
-
-        {/* <View style={styles.infoRow}>
-          <Text style={styles.label}>User ID</Text>
-          <Text style={styles.value}>{user.id || "N/A"}</Text>
-        </View> */}
-
-        {user.phone && (
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Phone</Text>
-            <Text style={styles.value}>{user.phone}</Text>
-          </View>
-        )}
-
-        {user.role && (
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Role</Text>
-            <Text style={styles.value}>{user.role}</Text>
-          </View>
-        )}
-
-        {/* ✅ Show location info */}
-        {address && (
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Current Location</Text>
-            <Text style={[styles.value, { flex: 1, textAlign: "right" }]} numberOfLines={2}>
-              {address}
-            </Text>
-          </View>
-        )}
-
-        {/* ✅ Fetch location button */}
         <TouchableOpacity
-          style={[styles.locationBtn, locating && { opacity: 0.7 }]}
-          onPress={getCurrentLocation}
-          disabled={locating}
-          activeOpacity={0.8}
+          style={styles.logoutButton}
+          onPress={handleLogout}
+          activeOpacity={0.85}
         >
-          {locating ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.locationBtnText}>📍 Use Current Location</Text>
-          )}
+          <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
-      </View>
-
-      {/* Logout Button */}
-      <TouchableOpacity
-        style={styles.logoutButton}
-        onPress={handleLogout}
-        activeOpacity={0.85}
-      >
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: "#0F0F0F",
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+  },
+  container: {
+    flex: 1,
     padding: 16,
   },
   center: {
@@ -238,8 +235,6 @@ const styles = StyleSheet.create({
   },
   logoutText: { color: "#fff", fontWeight: "700", fontSize: 16 },
   emptyText: { color: "#bbb", fontSize: 16 },
-
-  // ✅ New location button styles
   locationBtn: {
     marginTop: 16,
     backgroundColor: "#FF6B00",
