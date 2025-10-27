@@ -7,19 +7,17 @@ export default function SplashScreen({ navigation }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // 🔹 Fade-in animation
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 1200,
       useNativeDriver: true,
     }).start();
 
-    // 🔹 Redirect after delay
     const timeout = setTimeout(() => {
       if (userToken) {
-        navigation.replace("MainTabs"); // Logged in → go to home
+        navigation.replace("MainTabs"); 
       } else {
-        navigation.replace("Login"); // Not logged in → go to login
+        navigation.replace("Login"); 
       }
     }, 2000);
 

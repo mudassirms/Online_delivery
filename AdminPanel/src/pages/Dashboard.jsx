@@ -15,6 +15,8 @@ export default function Dashboard() {
   const [storeImage, setStoreImage] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [contact_number, setContactNumber] = useState("");
+  const [openTime, setOpenTime] = useState("");
+  const [closeTime, setCloseTime] = useState("");
   const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
 
@@ -56,23 +58,33 @@ export default function Dashboard() {
   }, [navigate]);
 
   const handleAddStore = async () => {
-    if (!storeName || !categoryId) return alert("Please provide store name and category.");
+    if (!storeName || !categoryId)
+      return alert("Please provide store name and category.");
+
     try {
       const res = await api.post("/catalog/stores", {
         name: storeName,
         image: storeImage,
-        contact: contact_number,
+        contact_number,
         category_id: parseInt(categoryId),
+        open_time: openTime || null,
+        close_time: closeTime || null,
       });
+
       setStats((prev) => ({
         ...prev,
         stores: [...prev.stores, res.data],
       }));
+
+      // Reset form
       setShowModal(false);
       setStoreName("");
       setStoreImage("");
       setContactNumber("");
       setCategoryId("");
+      setOpenTime("");
+      setCloseTime("");
+
       alert("Store added successfully!");
     } catch (err) {
       console.error(err.response?.data || err.message);
@@ -94,12 +106,20 @@ export default function Dashboard() {
             {/* Stats Summary */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
               <div className="bg-gradient-to-r from-purple-700 to-indigo-800 p-6 rounded-2xl shadow-xl hover:scale-105 transform transition">
-                <h2 className="text-lg font-semibold mb-2 text-white">Total Orders</h2>
-                <p className="text-3xl font-bold text-white">{stats.totalOrders}</p>
+                <h2 className="text-lg font-semibold mb-2 text-white">
+                  Total Orders
+                </h2>
+                <p className="text-3xl font-bold text-white">
+                  {stats.totalOrders}
+                </p>
               </div>
               <div className="bg-gradient-to-r from-green-700 to-teal-800 p-6 rounded-2xl shadow-xl hover:scale-105 transform transition">
-                <h2 className="text-lg font-semibold mb-2 text-white">Total Products</h2>
-                <p className="text-3xl font-bold text-white">{stats.totalProducts}</p>
+                <h2 className="text-lg font-semibold mb-2 text-white">
+                  Total Products
+                </h2>
+                <p className="text-3xl font-bold text-white">
+                  {stats.totalProducts}
+                </p>
               </div>
             </div>
 
@@ -116,7 +136,9 @@ export default function Dashboard() {
 
             {stats.stores.length === 0 ? (
               <div className="text-center bg-gray-800 p-8 rounded-2xl shadow-xl">
-                <p className="text-gray-400 mb-4">You don’t have any stores yet.</p>
+                <p className="text-gray-400 mb-4">
+                  You don’t have any stores yet.
+                </p>
                 <button
                   onClick={() => setShowModal(true)}
                   className="bg-blue-600 text-white px-6 py-2 rounded-xl shadow hover:bg-blue-700 transition"
@@ -138,8 +160,17 @@ export default function Dashboard() {
                       className="w-full h-48 object-cover"
                     />
                     <div className="p-4">
-                      <h3 className="text-lg font-semibold text-white mb-1">{store.name}</h3>
-                      <p className="text-sm text-gray-300">Category ID: {store.category_id}</p>
+                      <h3 className="text-lg font-semibold text-white mb-1">
+                        {store.name}
+                      </h3>
+                      <p className="text-sm text-gray-300">
+                        Category ID: {store.category_id}
+                      </p>
+                      {store.open_time && store.close_time && (
+                        <p className="text-sm text-gray-400 mt-1">
+                          ⏰ {store.open_time} - {store.close_time}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -150,7 +181,9 @@ export default function Dashboard() {
             {showModal && (
               <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
                 <div className="bg-gray-900 p-6 rounded-3xl shadow-2xl w-96 relative">
-                  <h2 className="text-2xl font-bold mb-4 text-white">Add Store</h2>
+                  <h2 className="text-2xl font-bold mb-4 text-white">
+                    Add Store
+                  </h2>
 
                   <input
                     type="text"
@@ -168,7 +201,7 @@ export default function Dashboard() {
                   />
                   <input
                     type="text"
-                    placeholder="Contact Number (optional)"   
+                    placeholder="Contact Number (optional)"
                     value={contact_number}
                     onChange={(e) => setContactNumber(e.target.value)}
                     className="w-full p-3 border border-gray-700 rounded-xl mb-4 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -185,6 +218,32 @@ export default function Dashboard() {
                       </option>
                     ))}
                   </select>
+
+                  {/* New Time Fields */}
+                  <div className="flex justify-between gap-3 mb-4">
+                    <div className="flex-1">
+                      <label className="block text-sm mb-1 text-gray-300">
+                        Open Time
+                      </label>
+                      <input
+                        type="time"
+                        value={openTime}
+                        onChange={(e) => setOpenTime(e.target.value)}
+                        className="w-full p-2 border border-gray-700 rounded-xl bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-sm mb-1 text-gray-300">
+                        Close Time
+                      </label>
+                      <input
+                        type="time"
+                        value={closeTime}
+                        onChange={(e) => setCloseTime(e.target.value)}
+                        className="w-full p-2 border border-gray-700 rounded-xl bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                  </div>
 
                   <div className="flex justify-end gap-3">
                     <button

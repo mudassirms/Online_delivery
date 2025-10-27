@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from datetime import datetime
+from datetime import time
 
 # -----------------------
 # User Schemas
@@ -50,6 +51,8 @@ class StoreBase(BaseModel):
     image: Optional[str] = None
     category_id: int
     contact_number: Optional[str] = None
+    open_time: Optional[time] = None
+    close_time: Optional[time] = None
 
 
 class StoreCreate(StoreBase):
@@ -60,11 +63,18 @@ class StoreUpdate(BaseModel):
     name: Optional[str] = None
     image: Optional[str] = None
     contact_number: Optional[str] = None
+    open_time: Optional[time] = None
+    close_time: Optional[time] = None
+    is_open: Optional[bool] = None
+
 
 
 class StoreOut(StoreBase):
     id: int
-    owner_id: int  # show which user owns the store
+    owner_id: int
+    
+    is_open: Optional[bool] = None
+    status_text: Optional[str] = None  
 
     class Config:
         orm_mode = True

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Text, func, Boolean
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Text, func, Boolean, Time
 from sqlalchemy.orm import relationship
 from backend.database import Base
 from datetime import datetime
@@ -61,6 +61,10 @@ class Store(Base):
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)  
     contact_number = Column(String(15), nullable=True)
+
+    open_time = Column(Time, nullable=True)
+    close_time = Column(Time, nullable=True)
+    is_closed_today = Column(Boolean, default=False)
 
     category = relationship("Category", back_populates="stores")
     products = relationship("Product", back_populates="store")

@@ -6,8 +6,28 @@ from backend.database import get_db
 from backend.auth import get_current_user  
 from backend.models import User
 from typing import Dict
+from datetime import datetime
 
 router = APIRouter(prefix="/catalog", tags=["Catalog"])
+
+def get_store_status(store):
+    """Return (is_open, status_text) based on current time."""
+    now = datetime.now().time()
+
+    if store.is_closed_today:
+        return False, "Closed Today"
+
+    if not store.open_time or not store.close_time:
+        return None, "Hours not set"
+
+    if store.open_time <= now <= store.close_time:
+        return True, "Open Now"
+    elif now < store.open_time:
+        open_str = store.open_time.strftime("%I:%M %p")
+        return False, f"Opens at {open_str}"
+    else:
+        open_str = store.open_time.strftime("%I:%M %p")
+        return False, f"Closed - Opens again at {open_str}"
 
 def send_notification(db: Session, user_id: int, title: str, message: str):
     """Store notification in DB or trigger push message."""
@@ -94,6 +114,12 @@ def get_stores_by_category(category_id: int, db: Session = Depends(get_db)):
     category = db.query(models.Category).filter(models.Category.id == category_id).first()
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
+    
+
+    stores = category.stores
+    for store in stores:
+        store.is_open, store.status_text = get_store_status(store)
+
     return category.stores
 
 
@@ -111,6 +137,8 @@ def get_my_stores(
 ):
     """✅ Return only stores owned by the logged-in user"""
     stores = db.query(models.Store).filter(models.Store.owner_id == current_user.id).all()
+    for store in stores:
+        store.is_open, store.status_text = get_store_status(store)
     return stores
 
 
@@ -132,7 +160,9 @@ def create_store(
         image=store.image,
         contact_number=store.contact_number,
         category_id=store.category_id,
-        owner_id=current_user.id
+        owner_id=current_user.id,
+        open_time=store.open_time,
+        close_time=store.close_time,
     )
     db.add(new_store)
     db.commit()
@@ -147,22 +177,58 @@ def update_store(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    """✅ Update store details including open/close time and status."""
     db_store = db.query(models.Store).filter(models.Store.id == store_id).first()
     if not db_store:
         raise HTTPException(status_code=404, detail="Store not found")
+
+    # Check permissions
     if db_store.owner_id != current_user.id and current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Not authorized to update this store")
 
-    if store.name:
+    # Update only provided fields
+    if store.name is not None:
         db_store.name = store.name
-    if store.image:
+    if store.image is not None:
         db_store.image = store.image
-    if store.contact_number:
+    if store.contact_number is not None:
         db_store.contact_number = store.contact_number
+    if store.open_time is not None:
+        db_store.open_time = store.open_time
+    if store.close_time is not None:
+        db_store.close_time = store.close_time
+    if hasattr(store, "is_open") and store.is_open is not None:
+        db_store.is_open = store.is_open
 
     db.commit()
     db.refresh(db_store)
     return db_store
+@router.patch("/stores/{store_id}", response_model=schemas.StoreOut)
+def patch_store(
+    store_id: int,
+    data: dict = Body(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """✅ Partially update store details (e.g., toggle open/closed)."""
+    db_store = db.query(models.Store).filter(models.Store.id == store_id).first()
+    if not db_store:
+        raise HTTPException(status_code=404, detail="Store not found")
+
+    # Authorization check
+    if db_store.owner_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to update this store")
+
+    # Update dynamically only valid attributes
+    updatable_fields = {"name", "image", "contact_number", "open_time", "close_time", "is_open"}
+    for key, value in data.items():
+        if key in updatable_fields:
+            setattr(db_store, key, value)
+
+    db.commit()
+    db.refresh(db_store)
+    return db_store
+
 
 
 # Products

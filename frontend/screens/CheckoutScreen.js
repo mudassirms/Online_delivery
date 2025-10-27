@@ -29,17 +29,14 @@ export default function CheckoutScreen({ navigation }) {
   const ALLOWED_CITY = 'Kudachi';
   const ALLOWED_PINCODE = '591311';
 
-  // Prefill phone number
   useEffect(() => {
     if (userInfo?.phone) {
       setPhone(userInfo.phone.replace(/[^\d]/g, '').slice(0, 10));
     }
   }, [userInfo]);
 
-  // Format phone input
   const formatPhone = (text) => text.replace(/[^\d]/g, '').slice(0, 10);
 
-  // Check deliverable address
   const isAddressDeliverable = (addr) => {
     if (!addr) return false;
     const lowerAddr = addr.toLowerCase();
@@ -49,7 +46,6 @@ export default function CheckoutScreen({ navigation }) {
     );
   };
 
-  // Fetch current location
   useEffect(() => {
     (async () => {
       try {
@@ -83,7 +79,6 @@ export default function CheckoutScreen({ navigation }) {
     })();
   }, []);
 
-  // Load cart
   useEffect(() => {
     const loadCart = async () => {
       try {
@@ -96,7 +91,6 @@ export default function CheckoutScreen({ navigation }) {
     loadCart();
   }, []);
 
-  // Place order
   const placeOrder = async () => {
     if (!cart || !cart.length) {
       return Alert.alert('Cart Empty', 'Add items before checkout.');
@@ -122,7 +116,6 @@ export default function CheckoutScreen({ navigation }) {
       const storeId = cart[0]?.product?.store_id;
       if (!storeId) throw new Error('Store information missing.');
 
-      // Save address
       const resAddress = await api.post('/catalog/addresses', {
         address_line: address,
         city: ALLOWED_CITY,
@@ -131,7 +124,6 @@ export default function CheckoutScreen({ navigation }) {
       });
       const addressId = resAddress.data.id;
 
-      // Place order
       const resOrder = await api.post('/catalog/orders', {
         address_id: addressId,
         store_id: storeId,

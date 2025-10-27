@@ -49,7 +49,7 @@ export default function HomeScreen({ navigation }) {
       setUser(userRes.data);
       setCategories(catRes.data);
       setBanners(bannerRes.data);
-      setPopular(popRes.data.slice(0, 5)); // ✅ Only first 5 products shown
+      setPopular(popRes.data.slice(0, 5)); 
 
       setFilteredCategories(catRes.data);
       setFilteredProducts(popRes.data.slice(0, 5));

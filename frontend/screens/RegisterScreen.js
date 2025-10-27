@@ -16,7 +16,7 @@ export default function RegisterScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const role = 'customer'; // ✅ hardcoded role
+  const role = 'customer'; 
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -31,7 +31,7 @@ export default function RegisterScreen({ navigation }) {
 
     setLoading(true);
     try {
-      await register(email, password, name, role, phone); // send phone to backend
+      await register(email, password, name, role, phone); 
       Alert.alert('Success', 'Account created. You can log in now.');
       navigation.replace('Login');
     } catch (e) {

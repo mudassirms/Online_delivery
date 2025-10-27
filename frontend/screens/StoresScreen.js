@@ -29,7 +29,7 @@ export default function StoresScreen({ route, navigation }) {
         const idToUse = categoryId || storeId;
         const res = await api.get(`/catalog/categories/${idToUse}/stores`);
         setStores(res.data);
-        setFilteredStores(res.data); // set initial filtered list
+        setFilteredStores(res.data);
       } catch (e) {
         console.warn("❌ Failed to load stores", e);
       } finally {
@@ -39,7 +39,6 @@ export default function StoresScreen({ route, navigation }) {
     loadStores();
   }, [categoryId, storeId]);
 
-  // Filter stores locally when searchQuery changes
   useEffect(() => {
     const query = searchQuery.toLowerCase();
     if (!query) {
@@ -73,11 +72,7 @@ export default function StoresScreen({ route, navigation }) {
         >
           <Text style={styles.backText}>←</Text>
         </TouchableOpacity>
-        <Text
-          style={styles.headerTitle}
-          numberOfLines={1}
-          ellipsizeMode="tail"
-        >
+        <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
           {categoryName || storeName || "Stores"}
         </Text>
         <View style={{ width: 32 }} />
@@ -101,7 +96,7 @@ export default function StoresScreen({ route, navigation }) {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.storeCard}
-            activeOpacity={0.85}
+            activeOpacity={0.9}
             onPress={() =>
               navigation.navigate("Products", {
                 storeId: item.id,
@@ -110,21 +105,34 @@ export default function StoresScreen({ route, navigation }) {
             }
           >
             {/* STORE IMAGE */}
-            <View style={styles.imageContainer}>
-              <Image
-                source={{
-                  uri:
-                    item.image ||
-                    "https://via.placeholder.com/100x100.png?text=Store",
-                }}
-                style={styles.storeImage}
-                resizeMode="cover"
-              />
-            </View>
+            <Image
+              source={{
+                uri:
+                  item.image ||
+                  "https://via.placeholder.com/100x100.png?text=Store",
+              }}
+              style={styles.storeImage}
+              resizeMode="cover"
+            />
 
             {/* STORE INFO */}
             <View style={styles.infoContainer}>
               <Text style={styles.storeName}>{item.name}</Text>
+
+              {item.is_open ? (
+                <Text style={[styles.statusText, { color: "#4CAF50" }]}>
+                  🟢 Open Now
+                </Text>
+              ) : (
+                <Text style={[styles.statusText, { color: "#F44336" }]}>
+                  🔴 Closed
+                </Text>
+              )}
+
+              {item.status_text && (
+                <Text style={styles.statusDetails}>{item.status_text}</Text>
+              )}
+
               {item.contact_number ? (
                 <Text style={styles.contactText}>📞 {item.contact_number}</Text>
               ) : (
@@ -132,6 +140,7 @@ export default function StoresScreen({ route, navigation }) {
                   No contact info
                 </Text>
               )}
+
               <Text numberOfLines={2} style={styles.storeDesc}>
                 {item.description || "Tap to view products from this store"}
               </Text>
@@ -153,18 +162,15 @@ export default function StoresScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#1a1a1a", // updated from #0f0f0f
+    backgroundColor: "#121212",
   },
-  // HEADER
   headerContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: Platform.OS === "ios" ? 14 : 12,
-    backgroundColor: "#1a1a1a", // match main background
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.08)", // slightly brighter
+    backgroundColor: "#121212",
   },
   backButton: {
     width: 36,
@@ -172,7 +178,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.12)", // slightly more visible
+    backgroundColor: "rgba(255,255,255,0.12)",
   },
   backText: {
     color: "#FF6B00",
@@ -187,7 +193,6 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 10,
   },
-  // SEARCH BAR
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -195,51 +200,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.12)", // glass effect stronger
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "rgba(255,255,255,0.08)",
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
     color: "#fff",
   },
-  // STORE CARD
   storeCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.12)", // increased opacity for glass effect
-    borderRadius: 16,
-    padding: 14,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 12,
+    padding: 12,
     marginBottom: 14,
-    borderWidth: 1,
-    borderColor: "rgba(255,107,0,0.2)", // subtle orange border
-    shadowColor: "#FF6B00",
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  imageContainer: {
-    width: 70,
-    height: 70,
-    borderRadius: 14,
-    overflow: "hidden",
-    marginRight: 14,
-    borderWidth: 1,
-    borderColor: "rgba(255,107,0,0.3)",
   },
   storeImage: {
-    width: "100%",
-    height: "100%",
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    marginRight: 14,
+    backgroundColor: "#222",
   },
   infoContainer: {
     flex: 1,
   },
   storeName: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "700",
     color: "#fff",
-    marginBottom: 2,
+    marginBottom: 4,
   },
   contactText: {
     fontSize: 13,
@@ -252,12 +242,21 @@ const styles = StyleSheet.create({
     color: "#bbb",
     lineHeight: 18,
   },
-  // STATES
+  statusText: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  statusDetails: {
+    fontSize: 12,
+    color: "#aaa",
+    marginBottom: 4,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#1a1a1a",
+    backgroundColor: "#121212",
   },
   loadingText: {
     color: "#bbb",
@@ -271,4 +270,3 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 });
-

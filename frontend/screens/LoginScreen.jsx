@@ -35,13 +35,11 @@ export default function LoginScreen({ navigation }) {
 
     setLoading(true);
     try {
-      // Example API: should return { token, user }
       const res = await apiLogin(email, password);
 
       if (res?.token) {
         await login(res.token, res.user);
       } else if (res?.access_token) {
-        // Fallback if backend returns access_token instead of token
         await login(res.access_token, res.user || null);
       } else {
         Alert.alert("Login failed", "Invalid response from server.");

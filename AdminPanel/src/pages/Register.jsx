@@ -6,6 +6,8 @@ export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState('');
+  
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -17,7 +19,7 @@ export default function Register() {
 
     try {
       setLoading(true);
-      await api.post("/auth/register", { name, email, password, role: "admin" });
+      await api.post("/auth/register", { name, email, password, role: "admin", phone });
       alert("Account created successfully! You can now log in.");
       navigate("/login");
     } catch (err) {
@@ -48,6 +50,13 @@ export default function Register() {
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            className="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition"
+          />
+          <input
+            type="Phone"
+            placeholder="Phone"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
             className="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition"
           />
           <input

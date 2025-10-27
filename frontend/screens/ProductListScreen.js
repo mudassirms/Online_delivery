@@ -224,7 +224,6 @@ const styles = StyleSheet.create({
   },
   loadingText: { color: "#bbb", marginTop: 8, fontSize: 14 },
 
-  // ✅ FIXED HEADER
   headerContainer: {
     flexDirection: "row",
     alignItems: "center",
