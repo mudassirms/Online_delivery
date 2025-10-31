@@ -5,4 +5,9 @@ pydantic
 passlib[bcrypt]
 python-jose
 python-multipart
-python-jose[cryptography] passlib bcrypt fastapi-mail
+python-jose
+cryptography
+fastapi-mail
+pymysql
+alembic
+argon2-cffi

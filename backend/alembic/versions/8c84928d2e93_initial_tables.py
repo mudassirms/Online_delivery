@@ -1,8 +1,8 @@
-"""initial commit
+"""initial tables
 
-Revision ID: f7be41b5bbdf
+Revision ID: 8c84928d2e93
 Revises: 
-Create Date: 2025-10-21 14:09:50.457328
+Create Date: 2025-10-29 19:52:00.075254
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'f7be41b5bbdf'
+revision: str = '8c84928d2e93'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -35,6 +35,9 @@ def upgrade() -> None:
     sa.Column('email', sa.String(length=255), nullable=False),
     sa.Column('hashed_password', sa.String(length=255), nullable=False),
     sa.Column('role', sa.String(length=50), nullable=True),
+    sa.Column('phone', sa.String(length=20), nullable=True),
+    sa.Column('is_verified', sa.Boolean(), nullable=True),
+    sa.Column('verification_token', sa.String(length=255), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
@@ -79,6 +82,10 @@ def upgrade() -> None:
     sa.Column('image', sa.String(length=255), nullable=True),
     sa.Column('category_id', sa.Integer(), nullable=False),
     sa.Column('owner_id', sa.Integer(), nullable=False),
+    sa.Column('contact_number', sa.String(length=15), nullable=True),
+    sa.Column('open_time', sa.Time(), nullable=True),
+    sa.Column('close_time', sa.Time(), nullable=True),
+    sa.Column('is_closed_today', sa.Boolean(), nullable=True),
     sa.ForeignKeyConstraint(['category_id'], ['categories.id'], ),
     sa.ForeignKeyConstraint(['owner_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -92,8 +99,11 @@ def upgrade() -> None:
     sa.Column('address_id', sa.Integer(), nullable=False),
     sa.Column('total_price', sa.Float(), nullable=False),
     sa.Column('status', sa.String(length=50), nullable=True),
+    sa.Column('store_name', sa.String(length=100), nullable=True),
     sa.Column('payment_method', sa.String(length=50), nullable=True),
+    sa.Column('order_title', sa.String(length=255), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+    sa.Column('contact_number', sa.String(length=20), nullable=True),
     sa.ForeignKeyConstraint(['address_id'], ['addresses.id'], ),
     sa.ForeignKeyConstraint(['store_id'], ['stores.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
