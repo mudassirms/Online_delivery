@@ -3,8 +3,8 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 
 # Import your database URL and models
-from backend.database import DATABASE_URL
-from backend.models import Base  # Make sure all models are imported in models.py
+from app.database import DATABASE_URL
+from app.models import Base  # Make sure all models are imported in models.py
 
 # Alembic Config object
 config = context.config

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from fastapi.staticfiles import StaticFiles
-from backend import database, models, schemas
+from app import database, models, schemas
 
 router = APIRouter(prefix="/home", tags=["Home"])
 products_router = APIRouter(prefix="/products", tags=["Products"])

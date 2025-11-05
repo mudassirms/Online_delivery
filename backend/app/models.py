@@ -1,21 +1,20 @@
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Text, func, Boolean, Time
 from sqlalchemy.orm import relationship
-from backend.database import Base
+from app.database import Base
 from datetime import datetime
 from sqlalchemy import DateTime
 
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), nullable=False)  # 👈 Added this line
+    name = Column(String(100), nullable=False)
     email = Column(String(255), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
-    role = Column(String(50), default="user") 
+    role = Column(String(50), default="user")
     phone = Column(String(20), nullable=True)
 
-
-    is_verified = Column(Boolean, default=False)  # 👈 Added
-    verification_token = Column(String(255), nullable=True)  # 👈 Added
+    is_verified = Column(Boolean, default=False)
+    verification_token = Column(String(255), nullable=True)
 
     addresses = relationship("Address", back_populates="user")
     orders = relationship("Order", back_populates="user")
@@ -23,17 +22,6 @@ class User(Base):
     logins = relationship("LoginHistory", back_populates="user")
     notifications = relationship("Notification", back_populates="user", cascade="all, delete")
 
-
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String(255), unique=True, index=True, nullable=False) 
-    hashed_password = Column(String(255), nullable=False)
-    role = Column(String(50), default="user") 
-
-    addresses = relationship("Address", back_populates="user")
-    orders = relationship("Order", back_populates="user")
-    cart_items = relationship("Cart", back_populates="user")
-    logins = relationship("LoginHistory", back_populates="user")
 
 class LoginHistory(Base):
     __tablename__ = "login_history"
@@ -49,8 +37,8 @@ class LoginHistory(Base):
 class Category(Base):
     __tablename__ = "categories"
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), unique=True, index=True, nullable=False)  
-    image = Column(String(255), nullable=True)  
+    name = Column(String(100), unique=True, index=True, nullable=False)
+    image = Column(String(255), nullable=True)
     stores = relationship("Store", back_populates="category")
 
 class Store(Base):
@@ -59,7 +47,7 @@ class Store(Base):
     name = Column(String(100), index=True, nullable=False)
     image = Column(String(255), nullable=True)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
-    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)  
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     contact_number = Column(String(15), nullable=True)
 
     open_time = Column(Time, nullable=True)
@@ -68,16 +56,15 @@ class Store(Base):
 
     category = relationship("Category", back_populates="stores")
     products = relationship("Product", back_populates="store")
-    owner = relationship("User")  # 👈 Optional reverse link
-
+    owner = relationship("User")
 
 
 class Product(Base):
     __tablename__ = "products"
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), index=True, nullable=False)  
+    name = Column(String(100), index=True, nullable=False)
     price = Column(Float, nullable=False)
-    image = Column(String(255), nullable=True)  
+    image = Column(String(255), nullable=True)
     store_id = Column(Integer, ForeignKey("stores.id"), nullable=False)
     store = relationship("Store", back_populates="products")
     available = Column(Boolean, default=True)
@@ -89,10 +76,10 @@ class Order(Base):
     store_id = Column(Integer, ForeignKey("stores.id"))
     address_id = Column(Integer, ForeignKey("addresses.id"), nullable=False)
     total_price = Column(Float, nullable=False)
-    status = Column(String(50), default="Pending")  
-    store_name = Column(String(100), nullable=True ) 
+    status = Column(String(50), default="Pending")
+    store_name = Column(String(100), nullable=True )
     payment_method = Column(String(50), default="COD")
-    order_title = Column(String(255), nullable=True)  # ✅ Added new column
+    order_title = Column(String(255), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     contact_number = Column(String(20), nullable=True)
@@ -108,7 +95,7 @@ class OrderItem(Base):
     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
     quantity = Column(Integer, nullable=False)
-    price = Column(Float, nullable=False)   
+    price = Column(Float, nullable=False)
     order = relationship("Order", back_populates="items")
     product = relationship("Product")
 

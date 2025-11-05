@@ -5,8 +5,8 @@ import sys
 # Ensure the parent directory (backend/) is on sys.path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from backend.models import Category, Base
-from backend.database import engine, SessionLocal
+from app.models import Category, Base
+from app.database import engine, SessionLocal
 
 
 def seed():

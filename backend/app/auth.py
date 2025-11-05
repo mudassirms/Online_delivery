@@ -4,7 +4,7 @@ from passlib.hash import argon2
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 
-from backend import models, schemas, database
+from app import models, schemas, database
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.security import OAuth2PasswordBearer
 

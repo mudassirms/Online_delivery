@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session, selectinload
 from typing import List
-from backend import models, schemas
-from backend.database import get_db
-from backend.auth import get_current_user  
-from backend.models import User
+from app import models, schemas
+from app.database import get_db
+from app.auth import get_current_user  
+from app.models import User
 from typing import Dict
 from datetime import datetime
 
