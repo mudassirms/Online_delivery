@@ -2,6 +2,16 @@ import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import api from "../api/api";
 import { useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+import isBetween from "dayjs/plugin/isBetween";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.extend(isBetween);
+
+const DISPLAY_TZ = "Asia/Kolkata";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -57,6 +67,54 @@ export default function Dashboard() {
     fetchData();
   }, [navigate]);
 
+  // ✅ Safely parse a time string ("HH:mm:ss", "HH:mm", "hh:mm A") into today's date in DISPLAY_TZ
+  const parseTimeToTz = (timeStr) => {
+    if (!timeStr || typeof timeStr !== "string" || !timeStr.trim()) return null;
+
+    const formats = ["HH:mm:ss", "HH:mm", "hh:mm A"];
+    const today = dayjs().tz(DISPLAY_TZ).format("YYYY-MM-DD");
+
+    for (let fmt of formats) {
+      const parsed = dayjs.tz(`${today} ${timeStr}`, `${"YYYY-MM-DD"} ${fmt}`, DISPLAY_TZ);
+      if (parsed.isValid()) return parsed;
+    }
+
+    // final fallback
+    const fallback = dayjs.tz(`${today}T${timeStr}`, DISPLAY_TZ);
+    return fallback.isValid() ? fallback : null;
+  };
+
+  // ✅ Determine if store is open right now
+  const isStoreOpenNow = (store) => {
+    if (!store?.open_time || !store?.close_time) return false;
+
+    const now = dayjs().tz(DISPLAY_TZ);
+    const open = parseTimeToTz(store.open_time);
+    const close = parseTimeToTz(store.close_time);
+
+    if (!open || !close) return false;
+
+    // Overnight hours (e.g., 10 PM - 2 AM)
+    if (close.isSame(open) || close.isBefore(open)) {
+      const closeNextDay = close.add(1, "day");
+      return now.isBetween(open, closeNextDay, null, "[)");
+    }
+
+    return now.isBetween(open, close, null, "[)");
+  };
+
+  // ✅ Format display time in hh:mm A format
+  const formatDisplayTime = (timeStr) => {
+    if (!timeStr) return "";
+    const formats = ["HH:mm:ss", "HH:mm", "hh:mm A"];
+    for (let fmt of formats) {
+      const parsed = dayjs(timeStr, fmt);
+      if (parsed.isValid()) return parsed.format("hh:mm A");
+    }
+    const tzParsed = parseTimeToTz(timeStr);
+    return tzParsed ? tzParsed.format("hh:mm A") : timeStr;
+  };
+
   const handleAddStore = async () => {
     if (!storeName || !categoryId)
       return alert("Please provide store name and category.");
@@ -76,7 +134,6 @@ export default function Dashboard() {
         stores: [...prev.stores, res.data],
       }));
 
-      // Reset form
       setShowModal(false);
       setStoreName("");
       setStoreImage("");
@@ -148,32 +205,49 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {stats.stores.map((store) => (
-                  <div
-                    key={store.id}
-                    className="bg-gray-800 rounded-2xl shadow-xl hover:shadow-2xl transition cursor-pointer overflow-hidden"
-                    onClick={() => navigate(`/dashboard/stores/${store.id}`)}
-                  >
-                    <img
-                      src={store.image || "https://via.placeholder.com/300x200"}
-                      alt={store.name}
-                      className="w-full h-48 object-cover"
-                    />
-                    <div className="p-4">
-                      <h3 className="text-lg font-semibold text-white mb-1">
-                        {store.name}
-                      </h3>
-                      <p className="text-sm text-gray-300">
-                        Category ID: {store.category_id}
-                      </p>
-                      {store.open_time && store.close_time && (
-                        <p className="text-sm text-gray-400 mt-1">
-                          ⏰ {store.open_time} - {store.close_time}
+                {stats.stores.map((store) => {
+                  const openNow = isStoreOpenNow(store);
+                  return (
+                    <div
+                      key={store.id}
+                      className="bg-gray-800 rounded-2xl shadow-xl hover:shadow-2xl transition cursor-pointer overflow-hidden"
+                      onClick={() => navigate(`/dashboard/stores/${store.id}`)}
+                    >
+                      <img
+                        src={store.image || "https://via.placeholder.com/300x200"}
+                        alt={store.name}
+                        className="w-full h-48 object-cover"
+                      />
+                      <div className="p-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold text-white mb-1">
+                            {store.name}
+                          </h3>
+                          <div
+                            className={`text-xs px-2 py-1 rounded-full font-medium ${
+                              openNow
+                                ? "bg-green-600 text-white"
+                                : "bg-red-600 text-white"
+                            }`}
+                          >
+                            {openNow ? "Open" : "Closed"}
+                          </div>
+                        </div>
+
+                        <p className="text-sm text-gray-300">
+                          Category ID: {store.category_id}
                         </p>
-                      )}
+
+                        {store.open_time && store.close_time && (
+                          <p className="text-sm text-gray-400 mt-1">
+                            ⏰ {formatDisplayTime(store.open_time)} -{" "}
+                            {formatDisplayTime(store.close_time)}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
@@ -192,6 +266,7 @@ export default function Dashboard() {
                     onChange={(e) => setStoreName(e.target.value)}
                     className="w-full p-3 border border-gray-700 rounded-xl mb-4 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
+
                   <input
                     type="text"
                     placeholder="Store Image URL (optional)"
@@ -199,6 +274,7 @@ export default function Dashboard() {
                     onChange={(e) => setStoreImage(e.target.value)}
                     className="w-full p-3 border border-gray-700 rounded-xl mb-4 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
+
                   <input
                     type="text"
                     placeholder="Contact Number (optional)"
@@ -206,6 +282,7 @@ export default function Dashboard() {
                     onChange={(e) => setContactNumber(e.target.value)}
                     className="w-full p-3 border border-gray-700 rounded-xl mb-4 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
+
                   <select
                     value={categoryId}
                     onChange={(e) => setCategoryId(e.target.value)}
@@ -219,7 +296,6 @@ export default function Dashboard() {
                     ))}
                   </select>
 
-                  {/* New Time Fields */}
                   <div className="flex justify-between gap-3 mb-4">
                     <div className="flex-1">
                       <label className="block text-sm mb-1 text-gray-300">
