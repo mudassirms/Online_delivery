@@ -27,6 +27,8 @@ export default function Dashboard() {
   const [contact_number, setContactNumber] = useState("");
   const [openTime, setOpenTime] = useState("");
   const [closeTime, setCloseTime] = useState("");
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
   const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
 
@@ -67,7 +69,6 @@ export default function Dashboard() {
     fetchData();
   }, [navigate]);
 
-  // ✅ Safely parse a time string ("HH:mm:ss", "HH:mm", "hh:mm A") into today's date in DISPLAY_TZ
   const parseTimeToTz = (timeStr) => {
     if (!timeStr || typeof timeStr !== "string" || !timeStr.trim()) return null;
 
@@ -79,12 +80,10 @@ export default function Dashboard() {
       if (parsed.isValid()) return parsed;
     }
 
-    // final fallback
     const fallback = dayjs.tz(`${today}T${timeStr}`, DISPLAY_TZ);
     return fallback.isValid() ? fallback : null;
   };
 
-  // ✅ Determine if store is open right now
   const isStoreOpenNow = (store) => {
     if (!store?.open_time || !store?.close_time) return false;
 
@@ -94,7 +93,6 @@ export default function Dashboard() {
 
     if (!open || !close) return false;
 
-    // Overnight hours (e.g., 10 PM - 2 AM)
     if (close.isSame(open) || close.isBefore(open)) {
       const closeNextDay = close.add(1, "day");
       return now.isBetween(open, closeNextDay, null, "[)");
@@ -103,7 +101,6 @@ export default function Dashboard() {
     return now.isBetween(open, close, null, "[)");
   };
 
-  // ✅ Format display time in hh:mm A format
   const formatDisplayTime = (timeStr) => {
     if (!timeStr) return "";
     const formats = ["HH:mm:ss", "HH:mm", "hh:mm A"];
@@ -127,6 +124,8 @@ export default function Dashboard() {
         category_id: parseInt(categoryId),
         open_time: openTime || null,
         close_time: closeTime || null,
+        latitude: latitude ? parseFloat(latitude) : null,
+        longitude: longitude ? parseFloat(longitude) : null,
       });
 
       setStats((prev) => ({
@@ -141,12 +140,32 @@ export default function Dashboard() {
       setCategoryId("");
       setOpenTime("");
       setCloseTime("");
+      setLatitude("");
+      setLongitude("");
 
       alert("Store added successfully!");
     } catch (err) {
       console.error(err.response?.data || err.message);
       alert("Failed to add store. Try again.");
     }
+  };
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLatitude(pos.coords.latitude.toFixed(6));
+        setLongitude(pos.coords.longitude.toFixed(6));
+      },
+      (err) => {
+        console.error(err);
+        alert("Failed to fetch location. Please allow location access.");
+      }
+    );
   };
 
   return (
@@ -296,6 +315,33 @@ export default function Dashboard() {
                     ))}
                   </select>
 
+                  {/* Location Section */}
+                  <div className="mb-4">
+                    <label className="block text-sm mb-1 text-gray-300">
+                      Store Location
+                    </label>
+                    <div className="flex gap-3">
+                      <input
+                        type="text"
+                        readOnly
+                        value={
+                          latitude && longitude
+                            ? `${latitude}, ${longitude}`
+                            : "Not set"
+                        }
+                        className="flex-1 p-2 border border-gray-700 rounded-xl bg-gray-800 text-white focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleGetLocation}
+                        className="px-3 py-2 bg-blue-600 rounded-xl text-white hover:bg-blue-700 transition"
+                      >
+                        📍 Get Location
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Time Inputs */}
                   <div className="flex justify-between gap-3 mb-4">
                     <div className="flex-1">
                       <label className="block text-sm mb-1 text-gray-300">

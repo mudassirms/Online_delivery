@@ -11,3 +11,4 @@ fastapi-mail
 pymysql
 alembic
 argon2-cffi
+haversine

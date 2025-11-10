@@ -1,16 +1,15 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://72.60.218.22:8029", // FastAPI backend URL
+  baseURL: "http://72.60.218.22:8029", 
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// ✅ Automatically attach the token to every request
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("admin_token"); // token stored after login
+    const token = localStorage.getItem("admin_token"); 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -19,14 +18,13 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ✅ Handle expired or invalid tokens globally
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
       console.warn("Token expired or invalid. Redirecting to login...");
       localStorage.removeItem("admin_token");
-      window.location.href = "/login"; // redirect to login page
+      window.location.href = "/login"; 
     }
     return Promise.reject(error);
   }

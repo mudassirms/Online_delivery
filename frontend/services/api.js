@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // --- Base API URL ---
-export const API_BASE = 'http://10.158.2.246:8000';
+export const API_BASE = 'http://srv1065687.hstgr.cloud:8029';
 
 // --- Axios instance ---
 const api = axios.create({
@@ -26,7 +26,6 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// --- Response Interceptor: Handle 401 and refresh token ---
 api.interceptors.response.use(
   (response) => response,
   async (error) => {

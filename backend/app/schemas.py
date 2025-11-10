@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
-from datetime import datetime
-from datetime import time
+from datetime import datetime, time
+
 
 # -----------------------
 # User Schemas
@@ -53,6 +53,8 @@ class StoreBase(BaseModel):
     contact_number: Optional[str] = None
     open_time: Optional[time] = None
     close_time: Optional[time] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 class StoreCreate(StoreBase):
@@ -66,15 +68,35 @@ class StoreUpdate(BaseModel):
     open_time: Optional[time] = None
     close_time: Optional[time] = None
     is_open: Optional[bool] = None
-
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 class StoreOut(StoreBase):
     id: int
     owner_id: int
-    
     is_open: Optional[bool] = None
-    status_text: Optional[str] = None  
+    status_text: Optional[str] = None
+
+    class Config:
+        orm_mode = True
+
+
+# -----------------------
+# Product Subcategory Schemas (IMPORTANT: BEFORE ProductOut)
+# -----------------------
+
+class ProductSubCategoryBase(BaseModel):
+    name: str
+    store_id: int
+
+
+class ProductSubCategoryCreate(ProductSubCategoryBase):
+    pass
+
+
+class ProductSubCategoryOut(ProductSubCategoryBase):
+    id: int
 
     class Config:
         orm_mode = True
@@ -89,6 +111,7 @@ class ProductBase(BaseModel):
     price: float
     image: Optional[str] = None
     store_id: int
+    subcategory_id: Optional[int] = None
 
 
 class ProductCreate(ProductBase):
@@ -99,6 +122,8 @@ class ProductUpdate(BaseModel):
     name: Optional[str] = None
     price: Optional[float] = None
     image: Optional[str] = None
+    subcategory_id: Optional[int] = None
+
 
 class ProductOut(BaseModel):
     id: int
@@ -107,10 +132,11 @@ class ProductOut(BaseModel):
     image: Optional[str]
     available: bool
     store_id: int
+    subcategory_id: Optional[int] = None
+    subcategory: Optional[ProductSubCategoryOut] = None
 
     class Config:
         orm_mode = True
-
 
 
 # -----------------------
@@ -151,68 +177,8 @@ class CartCreate(BaseModel):
 class CartOut(BaseModel):
     id: int
     quantity: int
-    product: ProductOut  # include product details
-
-    class Config:
-        orm_mode = True
-
-
-class AddressBase(BaseModel):
-    address_line: str
-    city: str
-    state: str
-    pincode: str
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-
-
-class AddressCreate(AddressBase):
-    pass
-
-
-class AddressOut(AddressBase):
-    id: int
-    user_id: int
-
-    class Config:
-        orm_mode = True
-
-
-
-# -----------------------
-# Order Schemas
-# -----------------------
-
-class OrderItemOut(BaseModel):
-    id: int
     product: ProductOut
-    quantity: int
-    price: float
 
-    class Config:
-        orm_mode = True
-
-
-class OrderCreate(BaseModel):
-    address_id: int
-    payment_method: Optional[str] = "cod"
-    order_title: Optional[str] = None 
-    contact_number: Optional[str] = None    
-
-
-class OrderOut(BaseModel):
-    id: int
-    total_price: float
-    user: Optional[UserOut]
-    status: str
-    created_at: datetime
-    address: AddressOut 
-    address_id: int
-    store_name: Optional[str] = None
-    contact_number: Optional[str]
-    items: List[OrderItemOut]
-    payment_method: str
-    order_title: Optional[str] = None
     class Config:
         orm_mode = True
 
@@ -240,3 +206,71 @@ class AddressOut(AddressBase):
 
     class Config:
         orm_mode = True
+
+
+# -----------------------
+# Order Schemas
+# -----------------------
+
+class OrderItemOut(BaseModel):
+    id: int
+    product: ProductOut
+    quantity: int
+    price: float
+
+    class Config:
+        orm_mode = True
+
+
+class OrderCreate(BaseModel):
+    address_id: int
+    payment_method: Optional[str] = "cod"
+    order_title: Optional[str] = None
+    contact_number: Optional[str] = None
+
+
+class OrderOut(BaseModel):
+    id: int
+    total_price: float               # Total customer pays (products + delivery)
+    store_earnings: Optional[float] = None  # Amount going to store (products only)
+    user: Optional[UserOut]
+    status: str
+    created_at: datetime
+    address: AddressOut
+    address_id: int
+    store_name: Optional[str] = None
+    contact_number: Optional[str]
+    items: List[OrderItemOut]
+    payment_method: str
+    order_title: Optional[str] = None
+    delivery_fee: Optional[float] = None
+
+    class Config:
+        orm_mode = True
+    class Config:
+        orm_mode = True
+
+
+# -----------------------
+# Delivery Settings
+# -----------------------
+class AppDeliverySettings(BaseModel):
+    id: int
+    base_fee: float
+    per_km_fee: float
+    min_fee: float
+    max_fee: float
+    reduce_fee_below_50: float
+    reduce_fee_below_100: float
+    free_above: float
+
+    class Config:
+        orm_mode = True
+class DeliverySettingsUpdate(BaseModel):
+    base_fee: Optional[float] = None
+    per_km_fee: Optional[float] = None
+    min_fee: Optional[float] = None
+    max_fee: Optional[float] = None
+    reduce_fee_below_50: Optional[float] = None
+    reduce_fee_below_100: Optional[float] = None
+    free_above: Optional[float] = None

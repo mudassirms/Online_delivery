@@ -19,7 +19,7 @@ export default function Register() {
 
     try {
       setLoading(true);
-      await api.post("/auth/register", { name, email, password, role: "admin", phone });
+      await api.post("/auth/register", { name, email, password, role: "store_owner", phone });
       alert("Account created successfully! You can now log in.");
       navigate("/login");
     } catch (err) {

@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import api from "../api/api";
 
-const ProductModal = ({ product, storeId, onClose, onSave }) => {
+const ProductModal = ({ product, storeId, subcategories, onClose, onSave }) => {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [image, setImage] = useState("");
   const [available, setAvailable] = useState(true);
+  const [subcategoryId, setSubcategoryId] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -14,34 +15,34 @@ const ProductModal = ({ product, storeId, onClose, onSave }) => {
       setPrice(product.price || "");
       setImage(product.image || "");
       setAvailable(product.available ?? true);
+      setSubcategoryId(product.subcategory_id || "");
     } else {
       setName("");
       setPrice("");
       setImage("");
       setAvailable(true);
+      setSubcategoryId("");
     }
   }, [product]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
+    const payload = {
+      name,
+      price,
+      image,
+      available,
+      store_id: storeId,
+      subcategory_id: subcategoryId || null,
+    };
+
     try {
       if (product) {
-        await api.put(`/catalog/products/${product.id}`, {
-          name,
-          price,
-          image,
-          available,
-          store_id: storeId,
-        });
+        await api.put(`/catalog/products/${product.id}`, payload);
       } else {
-        await api.post("/catalog/products", {
-          name,
-          price,
-          image,
-          available,
-          store_id: storeId,
-        });
+        await api.post("/catalog/products", payload);
       }
       onSave();
     } catch (error) {
@@ -60,12 +61,30 @@ const ProductModal = ({ product, storeId, onClose, onSave }) => {
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+
+          {/* Subcategory dropdown */}
+          <div>
+            <label className="block text-sm mb-1 text-gray-300">Category</label>
+            <select
+              value={subcategoryId}
+              onChange={(e) => setSubcategoryId(e.target.value)}
+              className="w-full bg-[#1e293b] text-white border border-gray-600 px-3 py-2 rounded-lg"
+            >
+              <option value="">No Category</option>
+              {subcategories?.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Name */}
           <div>
             <label className="block text-sm mb-1 text-gray-300">Name</label>
             <input
               type="text"
-              className="w-full bg-[#1e293b] text-white border border-gray-600 px-3 py-2 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+              className="w-full bg-[#1e293b] text-white border border-gray-600 px-3 py-2 rounded-lg"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -77,25 +96,25 @@ const ProductModal = ({ product, storeId, onClose, onSave }) => {
             <label className="block text-sm mb-1 text-gray-300">Price (₹)</label>
             <input
               type="number"
-              className="w-full bg-[#1e293b] text-white border border-gray-600 px-3 py-2 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+              className="w-full bg-[#1e293b] text-white border border-gray-600 px-3 py-2 rounded-lg"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
               required
             />
           </div>
 
-          {/* Image URL */}
+          {/* Image */}
           <div>
             <label className="block text-sm mb-1 text-gray-300">Image URL</label>
             <input
               type="text"
-              className="w-full bg-[#1e293b] text-white border border-gray-600 px-3 py-2 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+              className="w-full bg-[#1e293b] text-white border border-gray-600 px-3 py-2 rounded-lg"
               value={image}
               onChange={(e) => setImage(e.target.value)}
             />
           </div>
 
-          {/* Availability toggle */}
+          {/* Availability */}
           <div className="flex items-center justify-between mt-3">
             <span className="text-sm text-gray-300">Available:</span>
             <label className="inline-flex items-center cursor-pointer">
@@ -112,30 +131,28 @@ const ProductModal = ({ product, storeId, onClose, onSave }) => {
                   }`}
                 ></span>
               </div>
-              <span className="ml-2 text-sm">
-                {available ? "Yes" : "No"}
-              </span>
+              <span className="ml-2 text-sm">{available ? "Yes" : "No"}</span>
             </label>
           </div>
 
-          {/* Buttons */}
           <div className="flex justify-end gap-3 mt-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition"
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition disabled:opacity-70"
+              className="px-4 py-2 bg-green-500 text-white rounded-lg"
             >
               {loading ? "Saving..." : product ? "Update" : "Add"}
             </button>
           </div>
         </form>
+
       </div>
     </div>
   );

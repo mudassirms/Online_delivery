@@ -56,6 +56,10 @@ const StoresPage = () => {
           image: currentStore.image,
           contact_number: currentStore.contact_number,
           category_id: currentStore.category_id,
+          open_time: currentStore.open_time,
+          close_time: currentStore.close_time,
+          latitude: currentStore.latitude,
+          longitude: currentStore.longitude,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -73,6 +77,30 @@ const StoresPage = () => {
     }
   };
 
+  const handleDeleteStore = async (storeId) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this store? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("admin_token");
+      await api.delete(`/catalog/stores/${storeId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setStores((prev) => prev.filter((store) => store.id !== storeId));
+      setEditModalVisible(false);
+      alert("Store deleted successfully!");
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.detail || "Failed to delete store");
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -87,7 +115,9 @@ const StoresPage = () => {
     return (
       <Layout>
         <div className="flex flex-col items-center justify-center mt-20 text-center">
-          <h2 className="text-xl font-semibold text-gray-200 mb-2">No stores found</h2>
+          <h2 className="text-xl font-semibold text-gray-200 mb-2">
+            No stores found
+          </h2>
           <p className="text-gray-400">You don’t own any stores yet.</p>
         </div>
       </Layout>
@@ -112,7 +142,10 @@ const StoresPage = () => {
                 onClick={() => navigate(`/dashboard/stores/${store.id}`)}
               >
                 <img
-                  src={store.image || "https://via.placeholder.com/300x200?text=No+Image"}
+                  src={
+                    store.image ||
+                    "https://via.placeholder.com/300x200?text=No+Image"
+                  }
                   alt={store.name}
                   className="w-full h-40 object-cover rounded-xl group-hover:opacity-90 transition-all"
                 />
@@ -122,7 +155,8 @@ const StoresPage = () => {
                 {store.name}
               </h2>
               <p className="text-sm text-gray-400 mb-2">
-                Category ID: <span className="text-gray-300">{store.category_id}</span>
+                Category ID:{" "}
+                <span className="text-gray-300">{store.category_id}</span>
               </p>
 
               <div className="absolute bottom-3 right-3 flex gap-2">
@@ -130,7 +164,7 @@ const StoresPage = () => {
                   className="bg-cyan-500/20 text-cyan-300 text-xs px-3 py-1 rounded-full cursor-pointer"
                   onClick={() => navigate(`/dashboard/stores/${store.id}`)}
                 >
-                  Click to view products →
+                  View →
                 </div>
 
                 <button
@@ -138,6 +172,13 @@ const StoresPage = () => {
                   className="bg-orange-500/20 text-orange-400 text-xs px-3 py-1 rounded-full hover:bg-orange-500/40 transition"
                 >
                   Edit
+                </button>
+
+                <button
+                  onClick={() => handleDeleteStore(store.id)}
+                  className="bg-red-500/20 text-red-400 text-xs px-3 py-1 rounded-full hover:bg-red-500/40 transition"
+                >
+                  Delete
                 </button>
               </div>
             </div>
@@ -154,27 +195,39 @@ const StoresPage = () => {
                 type="text"
                 placeholder="Store Name"
                 value={currentStore.name}
-                onChange={(e) => setCurrentStore({ ...currentStore, name: e.target.value })}
+                onChange={(e) =>
+                  setCurrentStore({ ...currentStore, name: e.target.value })
+                }
                 className="w-full p-3 border border-gray-700 rounded-xl mb-4 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
               <input
                 type="text"
                 placeholder="Store Image URL"
                 value={currentStore.image || ""}
-                onChange={(e) => setCurrentStore({ ...currentStore, image: e.target.value })}
+                onChange={(e) =>
+                  setCurrentStore({ ...currentStore, image: e.target.value })
+                }
                 className="w-full p-3 border border-gray-700 rounded-xl mb-4 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
               <input
                 type="text"
                 placeholder="Contact Number"
                 value={currentStore.contact_number || ""}
-                onChange={(e) => setCurrentStore({ ...currentStore, contact_number: e.target.value })}
+                onChange={(e) =>
+                  setCurrentStore({
+                    ...currentStore,
+                    contact_number: e.target.value,
+                  })
+                }
                 className="w-full p-3 border border-gray-700 rounded-xl mb-4 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
               <select
                 value={currentStore.category_id || ""}
                 onChange={(e) =>
-                  setCurrentStore({ ...currentStore, category_id: parseInt(e.target.value) })
+                  setCurrentStore({
+                    ...currentStore,
+                    category_id: parseInt(e.target.value),
+                  })
                 }
                 className="w-full p-3 border border-gray-700 rounded-xl mb-4 bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
@@ -186,19 +239,102 @@ const StoresPage = () => {
                 ))}
               </select>
 
-              <div className="flex justify-end gap-3">
+              {/* 🕒 Open/Close Time */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="text-gray-400 text-sm block mb-1">
+                    Open Time
+                  </label>
+                  <input
+                    type="time"
+                    value={currentStore.open_time || ""}
+                    onChange={(e) =>
+                      setCurrentStore({
+                        ...currentStore,
+                        open_time: e.target.value,
+                      })
+                    }
+                    className="w-full p-2 border border-gray-700 rounded-xl bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-gray-400 text-sm block mb-1">
+                    Close Time
+                  </label>
+                  <input
+                    type="time"
+                    value={currentStore.close_time || ""}
+                    onChange={(e) =>
+                      setCurrentStore({
+                        ...currentStore,
+                        close_time: e.target.value,
+                      })
+                    }
+                    className="w-full p-2 border border-gray-700 rounded-xl bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+              </div>
+
+              {/* 📍 Latitude and Longitude */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="text-gray-400 text-sm block mb-1">
+                    Latitude
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={currentStore.latitude || ""}
+                    onChange={(e) =>
+                      setCurrentStore({
+                        ...currentStore,
+                        latitude: e.target.value,
+                      })
+                    }
+                    className="w-full p-2 border border-gray-700 rounded-xl bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-gray-400 text-sm block mb-1">
+                    Longitude
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={currentStore.longitude || ""}
+                    onChange={(e) =>
+                      setCurrentStore({
+                        ...currentStore,
+                        longitude: e.target.value,
+                      })
+                    }
+                    className="w-full p-2 border border-gray-700 rounded-xl bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center gap-3 mt-4">
                 <button
-                  onClick={() => setEditModalVisible(false)}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-xl hover:bg-gray-500 transition"
+                  onClick={() => handleDeleteStore(currentStore.id)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition"
                 >
-                  Cancel
+                  Delete Store
                 </button>
-                <button
-                  onClick={handleSaveStore}
-                  className="px-4 py-2 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition"
-                >
-                  Save Changes
-                </button>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setEditModalVisible(false)}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-xl hover:bg-gray-500 transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveStore}
+                    className="px-4 py-2 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition"
+                  >
+                    Save Changes
+                  </button>
+                </div>
               </div>
             </div>
           </div>

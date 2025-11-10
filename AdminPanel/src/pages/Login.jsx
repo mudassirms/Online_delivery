@@ -26,7 +26,7 @@ export default function Login() {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
 
-      if (res.data.user.role !== "admin") {
+      if (res.data.user.role !== "store_owner") {
         alert("Access denied — admin only!");
         return;
       }
