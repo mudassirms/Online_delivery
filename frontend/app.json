@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "TownDrop",
-    "slug": "TownDrop",
+    "slug": "towndrop",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/towndrop.jpg",
@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/towndrop.jpg",
         "backgroundColor": "#1a1a1a"
       },
       "edgeToEdgeEnabled": true,
@@ -26,15 +26,24 @@
       "userInterfaceStyle": "dark"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "5a1f9d79-0330-4ef5-a23f-b7e920f3c677"
-      }
+      "favicon": "./assets/towndrop.jpg"
     },
     "plugins": [
-      "expo-asset"
-    ]
+      "expo-asset",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "1964105b-df84-423b-bae9-e1afe25e2869"
+      }
+    },
+    "owner": "mudassirmsd"
   }
 }

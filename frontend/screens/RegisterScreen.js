@@ -16,7 +16,7 @@ export default function RegisterScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const role = 'customer'; 
+  const role = 'user'; 
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
 

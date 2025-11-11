@@ -20,15 +20,18 @@ import api from '../services/api';
 export default function CheckoutScreen({ navigation }) {
   const { cart, setCart, fetchCart, total } = useCart();
   const { userInfo } = useAuth();
+
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [fetchingLocation, setFetchingLocation] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState(null);
+  const [deliveryFee, setDeliveryFee] = useState(0);
 
   const ALLOWED_CITY = 'Kudachi';
   const ALLOWED_PINCODE = '591311';
 
+  // ✅ Format and set phone
   useEffect(() => {
     if (userInfo?.phone) {
       setPhone(userInfo.phone.replace(/[^\d]/g, '').slice(0, 10));
@@ -46,6 +49,7 @@ export default function CheckoutScreen({ navigation }) {
     );
   };
 
+  // ✅ Fetch user location and address
   useEffect(() => {
     (async () => {
       try {
@@ -79,6 +83,7 @@ export default function CheckoutScreen({ navigation }) {
     })();
   }, []);
 
+  // ✅ Load cart items
   useEffect(() => {
     const loadCart = async () => {
       try {
@@ -90,6 +95,41 @@ export default function CheckoutScreen({ navigation }) {
     };
     loadCart();
   }, []);
+
+useEffect(() => {
+  if (isAddressDeliverable(address)) {
+    const approxDistanceKm = 3;
+    const settings = {
+      base_fee: 5,             
+      per_km_fee: 5,           
+      min_fee: 12,              
+      max_fee: 26,             
+      reduce_fee_below_50: 5,   
+      reduce_fee_below_100: 10, 
+      free_above: 750,          
+    };
+
+    let distance_km = approxDistanceKm ?? 0;
+
+    let fee = (settings.base_fee || 0) + (distance_km * (settings.per_km_fee || 0));
+
+    fee = Math.max(settings.min_fee || 0, Math.min(fee, settings.max_fee ?? Infinity));
+
+    if (total < 50) {
+      fee = settings.reduce_fee_below_50 || 0; 
+    } else if (total < 100) {
+      fee = settings.reduce_fee_below_100 || 0; 
+    } else if (total >= (settings.free_above ?? Infinity)) {
+      fee = 0;
+    }
+
+    setDeliveryFee(parseFloat(fee.toFixed(2)));
+  } else {
+    setDeliveryFee(0);
+  }
+}, [address, total]);
+
+
 
   const placeOrder = async () => {
     if (!cart || !cart.length) {
@@ -129,11 +169,6 @@ export default function CheckoutScreen({ navigation }) {
         store_id: storeId,
         payment_method: paymentMethod,
         contact_number: phone,
-        items: cart.map((item) => ({
-          product_id: item.product.id,
-          quantity: item.quantity,
-        })),
-        total_price: total,
       });
 
       setCart([]);
@@ -151,6 +186,8 @@ export default function CheckoutScreen({ navigation }) {
       setLoading(false);
     }
   };
+
+  const finalTotal = total + deliveryFee;
 
   return (
     <SafeAreaView
@@ -224,8 +261,16 @@ export default function CheckoutScreen({ navigation }) {
               <Text style={styles.summaryValue}>{cart?.length || 0}</Text>
             </View>
             <View style={styles.summaryRowContainer}>
-              <Text style={styles.summaryLabel}>Total Amount</Text>
+              <Text style={styles.summaryLabel}>Subtotal</Text>
               <Text style={styles.summaryValue}>₹ {total.toFixed(2)}</Text>
+            </View>
+            <View style={styles.summaryRowContainer}>
+              <Text style={styles.summaryLabel}>Delivery Fee</Text>
+              <Text style={styles.summaryValue}>₹ {deliveryFee.toFixed(2)}</Text>
+            </View>
+            <View style={styles.summaryRowContainer}>
+              <Text style={[styles.summaryLabel, { fontWeight: '800', color: '#fff' }]}>Grand Total</Text>
+              <Text style={[styles.summaryValue, { fontSize: 18 }]}>₹ {finalTotal.toFixed(2)}</Text>
             </View>
           </View>
 
@@ -267,18 +312,66 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 6,
   },
-  header: { fontSize: 24, fontWeight: '800', color: '#FF6B00', marginBottom: 20, textAlign: 'center', letterSpacing: 0.5 },
+  header: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FF6B00',
+    marginBottom: 20,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 8 },
-  textInput: { borderWidth: 1, borderColor: '#333', borderRadius: 12, padding: 12, minHeight: 50, textAlignVertical: 'top', marginBottom: 20, color: '#fff', backgroundColor: '#141414' },
-  paymentOption: { borderWidth: 1, borderColor: '#333', borderRadius: 10, paddingVertical: 14, paddingHorizontal: 12, backgroundColor: '#141414', marginBottom: 16 },
-  paymentSelected: { backgroundColor: '#FF6B00', borderColor: '#FF6B00', shadowColor: '#FF6B00', shadowOpacity: 0.3, shadowRadius: 8 },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#333',
+    borderRadius: 12,
+    padding: 12,
+    minHeight: 50,
+    textAlignVertical: 'top',
+    marginBottom: 20,
+    color: '#fff',
+    backgroundColor: '#141414',
+  },
+  paymentOption: {
+    borderWidth: 1,
+    borderColor: '#333',
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    backgroundColor: '#141414',
+    marginBottom: 16,
+  },
+  paymentSelected: {
+    backgroundColor: '#FF6B00',
+    borderColor: '#FF6B00',
+    shadowColor: '#FF6B00',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
   paymentText: { color: '#ccc', fontWeight: '600' },
   paymentTextSelected: { color: '#fff', fontWeight: '700' },
-  summaryCard: { backgroundColor: '#141414', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,107,0,0.15)', paddingVertical: 14, paddingHorizontal: 16, marginBottom: 22 },
+  summaryCard: {
+    backgroundColor: '#141414',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,0,0.15)',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 22,
+  },
   summaryRowContainer: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 4 },
   summaryLabel: { fontSize: 15, color: '#ccc', fontWeight: '600' },
   summaryValue: { fontSize: 16, color: '#FF6B00', fontWeight: '700' },
-  orderButton: { backgroundColor: '#FF6B00', paddingVertical: 14, borderRadius: 12, alignItems: 'center', shadowColor: '#FF6B00', shadowOpacity: 0.4, shadowRadius: 8, elevation: 6 },
+  orderButton: {
+    backgroundColor: '#FF6B00',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#FF6B00',
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+  },
   disabledButton: { backgroundColor: '#555', shadowOpacity: 0 },
   orderButtonText: { color: '#fff', fontSize: 16, fontWeight: '700', textTransform: 'uppercase' },
 });

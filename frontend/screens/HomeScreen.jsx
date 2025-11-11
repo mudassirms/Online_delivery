@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   StatusBar,
   Animated,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import api from "../services/api";
@@ -28,6 +29,7 @@ export default function HomeScreen({ navigation }) {
   const [filteredProducts, setFilteredProducts] = useState([]);
 
   const insets = useSafeAreaInsets();
+  const scrollX = new Animated.Value(0);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -35,8 +37,6 @@ export default function HomeScreen({ navigation }) {
     else if (hour < 18) return "Good Afternoon,";
     else return "Good Evening,";
   };
-
-  const scrollX = new Animated.Value(0);
 
   const load = async () => {
     try {
@@ -46,10 +46,11 @@ export default function HomeScreen({ navigation }) {
         api.get("/home/banners"),
         api.get("/products/popular"),
       ]);
+
       setUser(userRes.data);
       setCategories(catRes.data);
       setBanners(bannerRes.data);
-      setPopular(popRes.data.slice(0, 5)); 
+      setPopular(popRes.data.slice(0, 5));
 
       setFilteredCategories(catRes.data);
       setFilteredProducts(popRes.data.slice(0, 5));
@@ -78,6 +79,19 @@ export default function HomeScreen({ navigation }) {
       popular.filter((prod) => prod.name.toLowerCase().includes(query))
     );
   }, [searchQuery, categories, popular]);
+
+  const handleCategoryPress = (item) => {
+    // Check if stores exist for this category
+    if (!item.stores || item.stores.length === 0) {
+      Alert.alert("Coming Soon 🚀", "Stores will be added to this category soon!");
+      return;
+    }
+
+    navigation.navigate("Stores", {
+      storeId: item.id,
+      storeName: item.name,
+    });
+  };
 
   if (loading) {
     return (
@@ -120,19 +134,14 @@ export default function HomeScreen({ navigation }) {
         {/* SEARCH RESULTS */}
         {searchQuery ? (
           <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-            {filteredCategories.length > 0 && (
-              <View>
+            {filteredCategories.length > 0 ? (
+              <>
                 <Text style={styles.searchSectionTitle}>Stores</Text>
                 {filteredCategories.map((store) => (
                   <TouchableOpacity
                     key={store.id}
                     style={styles.searchResultItem}
-                    onPress={() =>
-                      navigation.navigate("Stores", {
-                        storeId: store.id,
-                        storeName: store.name,
-                      })
-                    }
+                    onPress={() => handleCategoryPress(store)}
                   >
                     <Image
                       source={{ uri: store.image }}
@@ -141,11 +150,22 @@ export default function HomeScreen({ navigation }) {
                     <Text style={styles.searchResultText}>{store.name}</Text>
                   </TouchableOpacity>
                 ))}
-              </View>
+              </>
+            ) : (
+              <Text
+                style={{
+                  color: "#888",
+                  fontSize: 16,
+                  fontWeight: "600",
+                  marginVertical: 8,
+                }}
+              >
+                Stores Coming Soon 🚀
+              </Text>
             )}
 
-            {filteredProducts.length > 0 && (
-              <View style={{ marginTop: 12 }}>
+            {filteredProducts.length > 0 ? (
+              <>
                 <Text style={styles.searchSectionTitle}>Products</Text>
                 {filteredProducts.map((product) => (
                   <TouchableOpacity
@@ -164,7 +184,18 @@ export default function HomeScreen({ navigation }) {
                     </Text>
                   </TouchableOpacity>
                 ))}
-              </View>
+              </>
+            ) : (
+              <Text
+                style={{
+                  color: "#888",
+                  fontSize: 16,
+                  fontWeight: "600",
+                  marginVertical: 8,
+                }}
+              >
+                Products Coming Soon ✨
+              </Text>
             )}
           </View>
         ) : (
@@ -188,40 +219,60 @@ export default function HomeScreen({ navigation }) {
                   />
                 </View>
               )}
-              contentContainerStyle={{ paddingHorizontal: 16, marginVertical: 16 }}
+              contentContainerStyle={{
+                paddingHorizontal: 16,
+                marginVertical: 16,
+              }}
             />
 
             {/* SHOP BY CATEGORY */}
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Shop by Category</Text>
             </View>
-            <FlatList
-              data={filteredCategories}
-              horizontal
-              keyExtractor={(item) => String(item.id)}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.categoryCard}
-                  activeOpacity={0.8}
-                  onPress={() =>
-                    navigation.navigate("Stores", {
-                      storeId: item.id,
-                      storeName: item.name,
-                    })
-                  }
+
+            {filteredCategories.length > 0 ? (
+              <FlatList
+                data={filteredCategories}
+                horizontal
+                keyExtractor={(item) => String(item.id)}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.categoryCard}
+                    activeOpacity={0.8}
+                    onPress={() => handleCategoryPress(item)}
+                  >
+                    <View style={styles.categoryCardInner}>
+                      <Image
+                        source={{ uri: item.image }}
+                        style={styles.categoryImage}
+                      />
+                      <Text style={styles.categoryName}>{item.name}</Text>
+
+                      {/* Coming Soon Overlay */}
+                      {!item.stores?.length && (
+                        <View style={styles.comingSoonOverlay}>
+                          <Text style={styles.comingSoonText}>Coming Soon</Text>
+                        </View>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                )}
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingLeft: 16, paddingVertical: 8 }}
+              />
+            ) : (
+              <View style={{ padding: 16, alignItems: "center" }}>
+                <Text
+                  style={{
+                    color: "#888",
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
                 >
-                  <View style={styles.categoryCardInner}>
-                    <Image
-                      source={{ uri: item.image }}
-                      style={styles.categoryImage}
-                    />
-                    <Text style={styles.categoryName}>{item.name}</Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingLeft: 16, paddingVertical: 8 }}
-            />
+                  Stores Coming Soon 🚀
+                </Text>
+              </View>
+            )}
 
             {/* POPULAR PICKS */}
             <View style={styles.sectionHeader}>
@@ -237,38 +288,57 @@ export default function HomeScreen({ navigation }) {
                 <Text style={styles.seeAllText}>See All</Text>
               </TouchableOpacity>
             </View>
-            <FlatList
-              data={filteredProducts}
-              keyExtractor={(item) => String(item.id)}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.cleanProductCard}
-                  activeOpacity={0.9}
-                  onPress={() =>
-                    navigation.navigate("ProductDetail", { product: item })
-                  }
+
+            {filteredProducts.length > 0 ? (
+              <FlatList
+                data={filteredProducts}
+                keyExtractor={(item) => String(item.id)}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.cleanProductCard}
+                    activeOpacity={0.9}
+                    onPress={() =>
+                      navigation.navigate("ProductDetail", { product: item })
+                    }
+                  >
+                    <View>
+                      {item.isNew && (
+                        <View style={styles.badge}>
+                          <Text style={styles.badgeText}>NEW</Text>
+                        </View>
+                      )}
+                      <Image
+                        source={{ uri: item.image }}
+                        style={styles.cleanProductImage}
+                      />
+                      <Text
+                        style={styles.cleanProductName}
+                        numberOfLines={1}
+                      >
+                        {item.name}
+                      </Text>
+                      <Text style={styles.cleanProductPrice}>
+                        ₹{item.price}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+                contentContainerStyle={{
+                  paddingLeft: 16,
+                  paddingBottom: 24,
+                }}
+              />
+            ) : (
+              <View style={{ padding: 16, alignItems: "center" }}>
+                <Text
+                  style={{ color: "#888", fontSize: 16, fontWeight: "600" }}
                 >
-                  <View>
-                    {item.isNew && (
-                      <View style={styles.badge}>
-                        <Text style={styles.badgeText}>NEW</Text>
-                      </View>
-                    )}
-                    <Image
-                      source={{ uri: item.image }}
-                      style={styles.cleanProductImage}
-                    />
-                    <Text style={styles.cleanProductName} numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                    <Text style={styles.cleanProductPrice}>₹{item.price}</Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-              contentContainerStyle={{ paddingLeft: 16, paddingBottom: 24 }}
-            />
+                  Products Coming Soon ✨
+                </Text>
+              </View>
+            )}
           </>
         )}
       </ScrollView>
@@ -326,16 +396,25 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 12,
     alignItems: "center",
+    position: "relative",
   },
   categoryImage: { width: 70, height: 70, borderRadius: 40, marginBottom: 8 },
   categoryName: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: "600",
     color: "#fff",
     textAlign: "center",
   },
-
-  // ✅ Clean product cards (no back color)
+  comingSoonOverlay: {
+    marginTop: 0,
+    // bottom: 10,
+    backgroundColor: "rgba(25,107,0,0.8)",
+    borderRadius: 55,
+    paddingHorizontal: 12,
+    paddingVertical: 2,
+    zIndex : 1,
+  },
+  comingSoonText: { color: "#fff", fontSize: 12, fontWeight: "700" },
   cleanProductCard: { width: 160, marginRight: 16, alignItems: "center" },
   cleanProductImage: {
     width: 140,
@@ -354,7 +433,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
   },
-
   badge: {
     position: "absolute",
     top: 10,
@@ -367,7 +445,11 @@ const styles = StyleSheet.create({
   },
   badgeText: { color: "#fff", fontWeight: "700", fontSize: 10 },
   searchSectionTitle: { color: "#FF6B00", fontWeight: "700", marginBottom: 4 },
-  searchResultItem: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
+  searchResultItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
   searchResultImage: { width: 40, height: 40, borderRadius: 20, marginRight: 12 },
   searchResultText: { color: "#fff" },
 });

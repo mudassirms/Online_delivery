@@ -91,70 +91,75 @@ export default function StoresScreen({ route, navigation }) {
 
       {/* STORE LIST */}
       <FlatList
-        data={filteredStores}
-        keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.storeCard}
-            activeOpacity={0.9}
-            onPress={() =>
-              navigation.navigate("Products", {
-                storeId: item.id,
-                storeName: item.name,
-              })
-            }
-          >
-            {/* STORE IMAGE */}
-            <Image
-              source={{
-                uri:
-                  item.image ||
-                  "https://via.placeholder.com/100x100.png?text=Store",
-              }}
-              style={styles.storeImage}
-              resizeMode="cover"
-            />
-
-            {/* STORE INFO */}
-            <View style={styles.infoContainer}>
-              <Text style={styles.storeName}>{item.name}</Text>
-
-              {item.is_open ? (
-                <Text style={[styles.statusText, { color: "#4CAF50" }]}>
-                  🟢 Open Now
-                </Text>
-              ) : (
-                <Text style={[styles.statusText, { color: "#F44336" }]}>
-                  🔴 Closed
-                </Text>
-              )}
-
-              {item.status_text && (
-                <Text style={styles.statusDetails}>{item.status_text}</Text>
-              )}
-
-              {item.contact_number ? (
-                <Text style={styles.contactText}>📞 {item.contact_number}</Text>
-              ) : (
-                <Text style={[styles.contactText, { color: "#666" }]}>
-                  No contact info
-                </Text>
-              )}
-
-              <Text numberOfLines={2} style={styles.storeDesc}>
-                {item.description || "Tap to view products from this store"}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        )}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>No stores found.</Text>
-        }
-        contentContainerStyle={{
-          paddingBottom: 40,
-          paddingHorizontal: 16,
+  data={filteredStores}
+  keyExtractor={(item) => String(item.id)}
+  renderItem={({ item }) => (
+    <TouchableOpacity
+      style={[
+        styles.storeCard,
+        !item.is_open && { opacity: 0.5 } // visually indicate closed store
+      ]}
+      activeOpacity={0.9}
+      onPress={() => {
+        if (!item.is_open) return; // do nothing if store is closed
+        navigation.navigate("Products", {
+          storeId: item.id,
+          storeName: item.name,
+        });
+      }}
+    >
+      {/* STORE IMAGE */}
+      <Image
+        source={{
+          uri:
+            item.image ||
+            "https://via.placeholder.com/100x100.png?text=Store",
         }}
+        style={styles.storeImage}
+        resizeMode="cover"
       />
+
+      {/* STORE INFO */}
+      <View style={styles.infoContainer}>
+        <Text style={styles.storeName}>{item.name}</Text>
+
+        {item.is_open ? (
+          <Text style={[styles.statusText, { color: "#4CAF50" }]}>
+            🟢 Open Now
+          </Text>
+        ) : (
+          <Text style={[styles.statusText, { color: "#F44336" }]}>
+            🔴 Closed
+          </Text>
+        )}
+
+        {item.status_text && (
+          <Text style={styles.statusDetails}>{item.status_text}</Text>
+        )}
+
+        {item.contact_number ? (
+          <Text style={styles.contactText}>📞 {item.contact_number}</Text>
+        ) : (
+          <Text style={[styles.contactText, { color: "#666" }]}>
+            No contact info
+          </Text>
+        )}
+
+        <Text numberOfLines={2} style={styles.storeDesc}>
+          {item.description || "Tap to view products from this store"}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  )}
+  ListEmptyComponent={
+    <Text style={styles.emptyText}>No stores found.</Text>
+  }
+  contentContainerStyle={{
+    paddingBottom: 40,
+    paddingHorizontal: 16,
+  }}
+/>
+
     </SafeAreaView>
   );
 }

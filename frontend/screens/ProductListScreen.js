@@ -11,48 +11,109 @@ import {
   Dimensions,
   StatusBar,
   TextInput,
-  Modal,
-  Pressable,
   Platform,
+  Alert,
 } from "react-native";
+import * as Location from "expo-location";
 import api from "../services/api";
 import { useCart } from "../context/CartContext";
 
 const { width } = Dimensions.get("window");
 
+// Distance calculator
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const toRad = (x) => (x * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) ** 2;
+
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
 export default function ProductsScreen({ route, navigation }) {
-  const { storeId, storeName, contactNumber, popularProducts } = route.params || {};
-  
+  const { storeId, storeName, contactNumber, popularProducts, storeLocation } =
+    route.params || {};
+
   const [products, setProducts] = useState(popularProducts || []);
-  const [originalProducts, setOriginalProducts] = useState([]);
-  const [loading, setLoading] = useState(!popularProducts);
+  const [loading, setLoading] = useState(true);
+
   const [search, setSearch] = useState("");
-  const [menuVisible, setMenuVisible] = useState(false);
+
+  const [subcategories, setSubcategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+
+  const [distanceKm, setDistanceKm] = useState(0);
 
   const { addToCart } = useCart();
 
   useEffect(() => {
-    const loadProducts = async () => {
-      if (popularProducts) {
-        setProducts(popularProducts);
-        setOriginalProducts(popularProducts);
-        setLoading(false);
-        return;
-      }
+    const loadEverything = async () => {
       try {
-        const res = await api.get(`/catalog/stores/${storeId}/products`);
-        setProducts(res.data);
-        setOriginalProducts(res.data);
+        const prod = api.get(`/catalog/stores/${storeId}/products`);
+        const cats = api.get(`/catalog/stores/${storeId}/subcategories`);
+
+        const [pRes, cRes] = await Promise.all([prod, cats]);
+
+        setProducts(pRes.data);
+        setSubcategories(cRes.data);
+
       } catch (e) {
-        console.warn("Failed to load products", e);
+        console.warn("❌ Failed to load:", e.response?.data || e.message);
       } finally {
         setLoading(false);
       }
     };
-    loadProducts();
-  }, [storeId, popularProducts]);
 
-  const filteredProducts = products.filter((item) =>
+    loadEverything();
+
+    // Distance pricing
+    (async () => {
+      try {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") return;
+
+        const loc = await Location.getCurrentPositionAsync({});
+        if (storeLocation?.lat && storeLocation?.lng) {
+          const dist = calculateDistance(
+            loc.coords.latitude,
+            loc.coords.longitude,
+            storeLocation.lat,
+            storeLocation.lng
+          );
+          setDistanceKm(dist);
+        }
+      } catch (err) {
+        console.log("Location error:", err);
+      }
+    })();
+  }, [storeId]);
+
+  // ✅ Apply distance pricing
+  const adjustedProducts = products.map((item) => {
+    if (distanceKm > 0) {
+      const adjustedPrice = item.price + distanceKm * 2;
+      return { ...item, adjustedPrice: Math.round(adjustedPrice) };
+    }
+    return { ...item, adjustedPrice: item.price };
+  });
+
+  // ✅ Category filter  
+  const categoryFiltered =
+    selectedCategory === "all"
+      ? adjustedProducts
+      : adjustedProducts.filter(
+          (item) =>
+            item.subcategory_id &&
+            item.subcategory_id.toString() === selectedCategory.toString()
+        );
+
+  // ✅ Search filter
+  const finalFiltered = categoryFiltered.filter((item) =>
     item.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -72,21 +133,32 @@ export default function ProductsScreen({ route, navigation }) {
       <View style={styles.card}>
         <Image
           source={{
-            uri: item.image || "https://via.placeholder.com/150x150.png?text=Product",
+            uri:
+              item.image ||
+              "https://via.placeholder.com/150x150.png?text=Product",
           }}
           style={styles.image}
-          resizeMode="cover"
         />
         <View style={styles.details}>
-          <Text style={styles.name} numberOfLines={2}>
-            {item.name}
-          </Text>
-          <Text style={styles.price}>₹{item.price}</Text>
-          {!isAvailable && <Text style={styles.unavailable}>Unavailable</Text>}
+          <Text style={styles.name}>{item.name}</Text>
+          <Text style={styles.price}>₹{item.adjustedPrice}</Text>
+
+          {distanceKm > 0 && (
+            <Text style={styles.distanceText}>
+              (+₹{Math.round(distanceKm * 2)} distance fee)
+            </Text>
+          )}
+
+          {!isAvailable && (
+            <Text style={styles.unavailable}>Unavailable</Text>
+          )}
 
           <View style={styles.buttonRow}>
             <TouchableOpacity
-              style={[styles.addButton, !isAvailable && { backgroundColor: "#555" }]}
+              style={[
+                styles.addButton,
+                !isAvailable && { backgroundColor: "#555" },
+              ]}
               disabled={!isAvailable}
               onPress={() => addToCart(item, 1)}
             >
@@ -97,7 +169,9 @@ export default function ProductsScreen({ route, navigation }) {
 
             <TouchableOpacity
               style={styles.detailsButton}
-              onPress={() => navigation.navigate("ProductDetail", { product: item })}
+              onPress={() =>
+                navigation.navigate("ProductDetail", { product: item })
+              }
             >
               <Text style={styles.detailsButtonText}>View</Text>
             </TouchableOpacity>
@@ -109,27 +183,25 @@ export default function ProductsScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#121212" />
+      <StatusBar barStyle="light-content" />
 
       {/* HEADER */}
       <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
 
         <View style={styles.headerTextContainer}>
-          <Text style={styles.header}>{storeName || "Popular Products"}</Text>
+          <Text style={styles.header}>{storeName || "Products"}</Text>
           {contactNumber && (
             <Text style={styles.contactText}>📞 {contactNumber}</Text>
           )}
         </View>
 
-        <TouchableOpacity onPress={() => setMenuVisible(true)} style={styles.menuButton}>
-          <Text style={styles.menuDots}>⋮</Text>
-        </TouchableOpacity>
+        <View style={{ width: 22 }} />
       </View>
 
-      {/* SEARCH BAR */}
+      {/* SEARCH */}
       <View style={styles.searchBar}>
         <TextInput
           placeholder="Search products..."
@@ -140,128 +212,93 @@ export default function ProductsScreen({ route, navigation }) {
         />
       </View>
 
-      {/* PRODUCT LIST */}
-      {filteredProducts.length === 0 ? (
+      {/* ✅ CATEGORY BAR */}
+      <View style={styles.categoryBar}>
+        <FlatList
+          data={[{ id: "all", name: "All" }, ...subcategories]}
+          horizontal
+          keyExtractor={(item) => item.id.toString()}
+          showsHorizontalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[
+                styles.categoryChip,
+                selectedCategory === item.id && styles.categoryChipActive,
+              ]}
+              onPress={() => setSelectedCategory(item.id)}
+            >
+              <Text
+                style={[
+                  styles.categoryText,
+                  selectedCategory === item.id &&
+                    styles.categoryTextActive,
+                ]}
+              >
+                {item.name}
+              </Text>
+            </TouchableOpacity>
+          )}
+        />
+      </View>
+
+      {/* PRODUCTS */}
+      {finalFiltered.length === 0 ? (
         <Text style={styles.emptyText}>No products found.</Text>
       ) : (
         <FlatList
-          data={filteredProducts}
-          keyExtractor={(item) => String(item.id)}
+          data={finalFiltered}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
         />
       )}
-
-      {/* MENU MODAL */}
-      <Modal
-        transparent={true}
-        animationType="fade"
-        visible={menuVisible}
-        onRequestClose={() => setMenuVisible(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setMenuVisible(false)}>
-          <View style={styles.menuModal}>
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                const sorted = [...products].sort((a, b) => a.price - b.price);
-                setProducts(sorted);
-                setMenuVisible(false);
-              }}
-            >
-              <Text style={styles.menuItemText}>Sort by Price ↑</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                const sorted = [...products].sort((a, b) => b.price - a.price);
-                setProducts(sorted);
-                setMenuVisible(false);
-              }}
-            >
-              <Text style={styles.menuItemText}>Sort by Price ↓</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                const filtered = originalProducts.filter((item) => item.available);
-                setProducts(filtered);
-                setMenuVisible(false);
-              }}
-            >
-              <Text style={styles.menuItemText}>Filter Available</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                setProducts(originalProducts);
-                setMenuVisible(false);
-              }}
-            >
-              <Text style={styles.menuItemText}>Reset</Text>
-            </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#0F0F0F",
-  },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#0F0F0F",
-  },
-  loadingText: { color: "#bbb", marginTop: 8, fontSize: 14 },
+  container: { flex: 1, backgroundColor: "#0F0F0F" },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  loadingText: { color: "#bbb", marginTop: 10 },
 
   headerContainer: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
+    padding: 16,
     backgroundColor: "#121212",
-    paddingHorizontal: 16,
-    paddingBottom: 14,
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 8 : 20, // dynamic top padding
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.08)",
-    zIndex: 10,
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.1)",
     alignItems: "center",
-    justifyContent: "center",
   },
-  backArrow: { color: "#FF6B00", fontSize: 20, fontWeight: "700" },
-  headerTextContainer: { alignItems: "center", flex: 1 },
-  header: { fontSize: 20, fontWeight: "700", color: "#FF6B00" },
-  contactText: { fontSize: 13, color: "#ccc", marginTop: 2 },
-  menuButton: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
-  menuDots: { fontSize: 22, color: "#FF6B00", fontWeight: "700" },
+
+  backArrow: { fontSize: 22, color: "#FF6B00", fontWeight: "700" },
+  headerTextContainer: { flex: 1, alignItems: "center" },
+  header: { color: "#FF6B00", fontSize: 20, fontWeight: "700" },
+  contactText: { color: "#ccc", fontSize: 13 },
 
   searchBar: {
     margin: 16,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: "#1A1A1A",
   },
   searchInput: { color: "#fff", fontSize: 16 },
 
-  listContent: { paddingHorizontal: 16, paddingBottom: 80 },
-  emptyText: { color: "#aaa", textAlign: "center", fontSize: 16, marginTop: 20 },
+  categoryBar: { marginLeft: 16, marginBottom: 10 },
+  categoryChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    backgroundColor: "#1A1A1A",
+    borderRadius: 20,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: "#333",
+  },
+  categoryChipActive: {
+    backgroundColor: "#FF6B00",
+    borderColor: "#FF6B00",
+  },
+  categoryText: { color: "#ccc", fontSize: 14 },
+  categoryTextActive: { color: "#fff", fontWeight: "700" },
 
   card: {
     flexDirection: "row",
@@ -269,55 +306,43 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     marginBottom: 18,
     overflow: "hidden",
-    shadowColor: "#FF6B00",
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
   },
   image: { width: width * 0.32, height: width * 0.32 },
-  details: { flex: 1, padding: 12, justifyContent: "space-between" },
-  name: { fontSize: 16, fontWeight: "600", color: "#F5F5F5", marginBottom: 4 },
-  price: { color: "#FF6B00", fontWeight: "700", fontSize: 15, marginBottom: 6 },
-  unavailable: { color: "#FF4C4C", fontWeight: "600", marginBottom: 6 },
-  buttonRow: { flexDirection: "row", justifyContent: "space-between" },
+
+  details: { flex: 1, padding: 12 },
+  name: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  price: { color: "#FF6B00", fontWeight: "700", fontSize: 15 },
+  distanceText: { color: "#999", fontSize: 12, marginTop: 4 },
+  unavailable: { color: "#FF4C4C", marginTop: 4 },
+
+  buttonRow: { flexDirection: "row", marginTop: 10 },
+
   addButton: {
     flex: 1,
     backgroundColor: "#FF6B00",
-    paddingVertical: 10,
     borderRadius: 8,
+    paddingVertical: 10,
     alignItems: "center",
     marginRight: 8,
   },
-  addButtonText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  addButtonText: { color: "#fff", fontWeight: "700" },
+
   detailsButton: {
     flex: 1,
-    borderWidth: 1,
     borderColor: "#FF6B00",
+    borderWidth: 1,
     borderRadius: 8,
+    paddingVertical: 10,
     alignItems: "center",
-    justifyContent: "center",
   },
-  detailsButtonText: { color: "#FF6B00", fontWeight: "600", fontSize: 14 },
+  detailsButtonText: { color: "#FF6B00", fontWeight: "600" },
 
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.3)",
-    justifyContent: "flex-start",
-    alignItems: "flex-end",
+  emptyText: {
+    textAlign: "center",
+    color: "#aaa",
+    fontSize: 16,
+    marginTop: 20,
   },
-  menuModal: {
-    width: 160,
-    backgroundColor: "#1A1A1A",
-    borderRadius: 12,
-    marginTop: Platform.OS === "android" ? StatusBar.currentHeight + 60 : 80,
-    marginRight: 16,
-    paddingVertical: 8,
-    shadowColor: "#FF6B00",
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 5,
-  },
-  menuItem: { paddingVertical: 12, paddingHorizontal: 16 },
-  menuItemText: { color: "#fff", fontWeight: "600" },
+
+  listContent: { paddingHorizontal: 16, paddingBottom: 50 },
 });
