@@ -158,7 +158,9 @@ export default function AdminOrders() {
         {orders.map((order) => (
           <div
             key={order.id}
-            className="bg-gray-900 border border-gray-700 rounded-2xl p-6 shadow-lg text-gray-200"
+            className={`${
+              order.status === "cancelled" ? "bg-red-900/20" : "bg-gray-900"
+            } border border-gray-700 rounded-2xl p-6 shadow-lg text-gray-200`}
           >
             {/* Header */}
             <div className="flex justify-between items-center mb-4">
@@ -173,6 +175,8 @@ export default function AdminOrders() {
                     ? "bg-green-600/80 text-white"
                     : order.status === "rejected"
                     ? "bg-red-600/80 text-white"
+                    : order.status === "cancelled"
+                    ? "bg-red-500/80 text-white"
                     : "bg-gray-700/80 text-white"
                 }`}
               >
@@ -245,7 +249,7 @@ export default function AdminOrders() {
 
             {/* Actions */}
             <div className="flex flex-wrap gap-3">
-              {order.status !== "accepted" && (
+              {order.status !== "accepted" && order.status !== "cancelled" && (
                 <button
                   onClick={() => updateStatus(order.id, "accepted")}
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition"
@@ -253,7 +257,7 @@ export default function AdminOrders() {
                   Accept
                 </button>
               )}
-              {order.status !== "completed" && (
+              {order.status !== "completed" && order.status !== "cancelled" && (
                 <button
                   onClick={() => updateStatus(order.id, "completed")}
                   className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition"
@@ -261,7 +265,7 @@ export default function AdminOrders() {
                   Complete
                 </button>
               )}
-              {order.status !== "rejected" && (
+              {order.status !== "rejected" && order.status !== "cancelled" && (
                 <button
                   onClick={() => updateStatus(order.id, "rejected")}
                   className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition"

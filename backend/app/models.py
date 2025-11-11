@@ -74,6 +74,7 @@ class Store(Base):
     products = relationship("Product", back_populates="store")
     
     owner = relationship("User", back_populates="stores")
+    
 
 
 class Product(Base):

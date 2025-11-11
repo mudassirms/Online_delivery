@@ -578,7 +578,7 @@ def create_order(
         raise HTTPException(status_code=404, detail="Address not found")
 
     distance_km = calculate_delivery_distance(store, address)
-    order_total = sum(item.product.price * item.quantity for item in cart_items)   prices
+    order_total = sum(item.product.price * item.quantity for item in cart_items) 
 
     settings = db.query(models.AppDeliverySettings).first()
     if not settings:
@@ -733,6 +733,48 @@ def delete_order(
 
     return {"message": "Order deleted successfully", "order_id": order_id}
 
+@router.post("/orders/{order_id}/cancel", response_model=schemas.OrderOut)
+def cancel_order(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """
+    End-user can cancel their own order.
+    Store owners cannot use this endpoint (use existing PATCH for them).
+    """
+
+    # Fetch the order
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    # Permission check: only the user who placed the order can cancel
+    if current_user.role != "user" or order.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to cancel this order")
+
+    # Only allow cancel if order is not already completed/cancelled
+    if order.status in ["cancelled", "delivered", "completed"]:
+        raise HTTPException(status_code=400, detail=f"Cannot cancel an order with status '{order.status}'")
+
+    # Update order status
+    order.status = "cancelled"
+    db.commit()
+    db.refresh(order)
+
+    # ✅ Fetch store info and notify owner safely
+    store = db.query(models.Store).filter(models.Store.id == order.store_id).first()
+    user_id = store.owner_id if store else None
+
+    if user_id:
+        send_notification(
+            db=db,
+            user_id=user_id,
+            title=f"Order #{order.id} Cancelled",
+            message="The user has cancelled the order."
+        )
+
+    return order
 
 
 # Addresses
