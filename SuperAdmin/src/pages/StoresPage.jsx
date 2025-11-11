@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
 import { getStores, getCategories, getUsersWithStores } from "../api/superadminApi";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+import isBetween from "dayjs/plugin/isBetween";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.extend(isBetween);
+
+const DISPLAY_TZ = "Asia/Kolkata";
 
 export default function StoresPage() {
   const [stores, setStores] = useState([]);
@@ -39,11 +49,38 @@ export default function StoresPage() {
     return user ? user.name : "N/A";
   };
 
-  const getStatusClass = (store) => {
-    // Assuming store.is_open is a boolean or 0/1
-    if (store.is_open) return "bg-green-500 text-white font-bold px-2 py-1 rounded";
-    else return "bg-red-500 text-white font-bold px-2 py-1 rounded";
+  // -------- OPEN/CLOSED LOGIC ----------
+  const parseTimeToTz = (timeStr) => {
+    if (!timeStr) return null;
+    const today = dayjs().tz(DISPLAY_TZ).format("YYYY-MM-DD");
+    const parsed = dayjs.tz(`${today} ${timeStr}`, "YYYY-MM-DD HH:mm:ss", DISPLAY_TZ);
+    return parsed.isValid() ? parsed : null;
   };
+
+  const isStoreOpenNow = (store) => {
+    if (!store.open_time || !store.close_time) return false;
+
+    const now = dayjs().tz(DISPLAY_TZ);
+    const open = parseTimeToTz(store.open_time);
+    const close = parseTimeToTz(store.close_time);
+
+    if (!open || !close) return false;
+
+    // handle stores that close after midnight
+    if (close.isBefore(open) || close.isSame(open)) {
+      const closeNextDay = close.add(1, "day");
+      return now.isBetween(open, closeNextDay, null, "[)");
+    }
+
+    return now.isBetween(open, close, null, "[)");
+  };
+
+  const getStatusClass = (store) => {
+    return isStoreOpenNow(store)
+      ? "bg-green-500 text-white font-bold px-2 py-1 rounded"
+      : "bg-red-500 text-white font-bold px-2 py-1 rounded";
+  };
+  // -------------------------------------
 
   if (loading) return <p>Loading stores...</p>;
 
@@ -67,7 +104,7 @@ export default function StoresPage() {
               <td className="p-2 border">{getOwnerName(store.owner_id)}</td>
               <td className="p-2 border text-center">
                 <span className={getStatusClass(store)}>
-                  {store.is_open ? "Open" : "Closed"}
+                  {isStoreOpenNow(store) ? "Open" : "Closed"}
                 </span>
               </td>
             </tr>
