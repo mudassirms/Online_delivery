@@ -69,6 +69,7 @@ class Store(Base):
 
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
+    
 
     category = relationship("Category", back_populates="stores")
     products = relationship("Product", back_populates="store")
@@ -115,7 +116,8 @@ class Order(Base):
     store_name = Column(String(100), nullable=True )
     payment_method = Column(String(50), default="COD")
     order_title = Column(String(255), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime, nullable=False)
+
     delivery_fee = Column(Float, default=0.0)
     store_earnings = Column(Float, default=0.0)
 

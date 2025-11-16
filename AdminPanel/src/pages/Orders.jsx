@@ -2,6 +2,14 @@ import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import api from "../api/api";
 import toast, { Toaster } from "react-hot-toast";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault("Asia/Kolkata");
+
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
@@ -119,13 +127,28 @@ export default function AdminOrders() {
   };
 
   // 🕒 Format timestamp
-  const formatDateTime = (dateString) =>
-    dateString
-      ? new Date(dateString).toLocaleString("en-IN", {
-          dateStyle: "medium",
-          timeStyle: "short",
-        })
-      : "N/A";
+// ⏱ Correct IST formatter
+const formatDateTime = (value) => {
+  if (!value) return "N/A";
+
+  try {
+    const s = String(value).trim();
+
+    if (/^\d+$/.test(s)) {
+      const epoch = s.length === 10 ? Number(s) * 1000 : Number(s);
+      return dayjs(epoch).format("DD MMM YYYY, hh:mm A");
+    }
+
+    return dayjs(s).format("DD MMM YYYY, hh:mm A");
+
+  } catch (e) {
+    console.warn("formatDateTime error:", value, e);
+    return "Invalid date";
+  }
+};
+
+
+
 
   if (loading)
     return (

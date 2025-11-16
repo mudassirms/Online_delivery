@@ -112,11 +112,15 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.username}>{user?.name || "User"} 👋</Text>
         </View>
         <TouchableOpacity onPress={() => navigation.navigate("Profile")}>
-          <Image
-            source={{ uri: user?.avatar || "https://i.pravatar.cc/150" }}
-            style={styles.avatar}
-          />
-        </TouchableOpacity>
+    {user?.avatar ? (
+      <Image
+        source={{ uri: user.avatar }}
+        style={styles.avatar}
+      />
+    ) : (
+      <Text style={styles.avatarIcon}>👤</Text>
+    )}
+  </TouchableOpacity>
       </View>
 
       {/* SEARCH BAR */}
@@ -414,6 +418,17 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     zIndex : 1,
   },
+  avatarIcon: {
+  fontSize: 28,
+  color: "#fff",
+  backgroundColor: "rgba(255,255,255,0.1)",
+  width: 40,
+  height: 40,
+  textAlign: "center",
+  textAlignVertical: "center",
+  borderRadius: 20,
+},
+
   comingSoonText: { color: "#fff", fontSize: 12, fontWeight: "700" },
   cleanProductCard: { width: 160, marginRight: 16, alignItems: "center" },
   cleanProductImage: {

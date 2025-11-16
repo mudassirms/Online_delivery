@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const superadminApi = axios.create({
-  baseURL: "http://72.60.218.22:8029", // backend prefix
+  baseURL: "http://localhost:8000/", // backend prefix
   headers: {
     "Content-Type": "application/json",
   },
@@ -32,20 +32,20 @@ superadminApi.interceptors.response.use(
   }
 );
 
-export const getUsersWithStores = () => superadminApi.get("/superadmin/users-with-stores");
-export const getStores = () => superadminApi.get("/superadmin/stores");
-export const getCategories = () => superadminApi.get("/superadmin/categories");
-export const createCategory = (data) => superadminApi.post("/superadmin/categories", data);
+export const getUsersWithStores = () => superadminApi.get("superadmin/users-with-stores");
+export const getStores = () => superadminApi.get("superadmin/stores");
+export const getCategories = () => superadminApi.get("superadmin/categories");
+export const createCategory = (data) => superadminApi.post("superadmin/categories", data);
 export const updateCategory = (id, data) =>
-  superadminApi.put(`/superadmin/categories/${id}`, data);
+  superadminApi.put(`superadmin/categories/${id}`, data);
 export const deleteCategory = (id) =>
-  superadminApi.delete(`/superadmin/categories/${id}`);
-export const getDeliverySettings = () => superadminApi.get("/superadmin/delivery-settings");
+  superadminApi.delete(`superadmin/categories/${id}`);
+export const getDeliverySettings = () => superadminApi.get("superadmin/delivery-settings");
 export const updateDeliverySettings = (data) =>
-  superadminApi.put("/superadmin/delivery-settings", data);
-export const getOrders = () => superadminApi.get("/superadmin/orders");
+  superadminApi.put("superadmin/delivery-settings", data);
+export const getOrders = () => superadminApi.get("superadmin/orders");
 export const patchOrder = (id, data) =>
-  superadminApi.patch(`/superadmin/orders/${id}`, data);
-export const deleteOrder = (id) => superadminApi.delete(`/superadmin/orders/${id}`);
+  superadminApi.patch(`superadmin/orders/${id}`, data);
+export const deleteOrder = (id) => superadminApi.delete(`superadmin/orders/${id}`);
 
 export default superadminApi;

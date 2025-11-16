@@ -18,8 +18,10 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 
+// ✅ Initialize Day.js with timezone + set default to Asia/Kolkata (IST)
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.tz.setDefault("Asia/Kolkata");
 
 export default function OrdersScreen() {
   const [orders, setOrders] = useState([]);
@@ -56,8 +58,7 @@ export default function OrdersScreen() {
 
       // ✅ Merge store contact number into each order
       const mergedOrders = fetchedOrders.map((order) => {
-        const storeMatch =
-          storesMap[order.store_name?.toLowerCase()] || null;
+        const storeMatch = storesMap[order.store_name?.toLowerCase()] || null;
 
         return {
           ...order,
@@ -117,10 +118,26 @@ export default function OrdersScreen() {
     }
   };
 
-  const formatDateTime = (utcString) => {
-    if (!utcString) return "N/A";
-    return dayjs.utc(utcString).tz("Asia/Kolkata").format("DD MMM YYYY, hh:mm A");
-  };
+  // ✅ Fully robust IST time formatter
+  // ⏱ Correct IST formatter (no timezone conversion)
+const formatDateTime = (value) => {
+  if (!value) return "N/A";
+
+  try {
+    const s = String(value).trim();
+
+    if (/^\d+$/.test(s)) {
+      const epoch = s.length === 10 ? Number(s) * 1000 : Number(s);
+      return dayjs(epoch).format("DD MMM YYYY, hh:mm A");
+    }
+
+    return dayjs(s).format("DD MMM YYYY, hh:mm A");
+  } catch (e) {
+    console.warn("formatDateTime error:", value, e);
+    return "Invalid date";
+  }
+};
+
 
   const callStore = (phoneNumber) => {
     if (!phoneNumber) {
@@ -156,7 +173,8 @@ export default function OrdersScreen() {
       <View style={styles.divider} />
 
       <Text style={styles.text}>
-        <Text style={styles.label}>Total: </Text>₹{Number(item.total_price || 0).toFixed(2)}
+        <Text style={styles.label}>Total: </Text>₹
+        {Number(item.total_price || 0).toFixed(2)}
       </Text>
 
       <Text style={styles.text}>
@@ -276,7 +294,12 @@ const styles = StyleSheet.create({
   text: { color: "#ddd", marginBottom: 6, lineHeight: 20 },
   label: { color: "#FF6B00", fontWeight: "600" },
   dateText: { color: "#888", fontSize: 12, marginTop: 6, textAlign: "right" },
-  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0F0F0F" },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#0F0F0F",
+  },
   loadingText: { marginTop: 10, color: "#bbb" },
   emptyText: { textAlign: "center", marginTop: 60, color: "#888", fontSize: 15 },
   cancelButton: {

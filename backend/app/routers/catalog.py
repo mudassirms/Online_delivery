@@ -8,6 +8,11 @@ from app.models import User
 from typing import Dict
 from datetime import datetime
 from haversine import haversine, Unit
+import pytz
+
+
+india = pytz.timezone("Asia/Kolkata")
+
 
 router = APIRouter(prefix="/catalog", tags=["Catalog"])
 
@@ -149,6 +154,7 @@ def get_my_stores(
     for store in stores:
         store.is_open, store.status_text = get_store_status(store)
     return stores
+    
 
 @router.post("/stores", response_model=schemas.StoreOut)
 def create_store(
@@ -606,7 +612,8 @@ def create_order(
         store_name=store.name,
         payment_method=order_data.payment_method,
         contact_number=order_data.contact_number or current_user.phone,
-        delivery_fee=delivery_fee
+        delivery_fee=delivery_fee,
+        created_at=datetime.now(india)
     )
     db.add(order)
     db.commit()
@@ -653,7 +660,8 @@ def get_orders(
     else:
         query = query.filter(models.Order.user_id == current_user.id)
 
-    orders = query.all()
+    orders = query.order_by(models.Order.created_at.desc()).all()
+
 
     for order in orders:
         if order.items:
