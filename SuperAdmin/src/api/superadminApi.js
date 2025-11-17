@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const superadminApi = axios.create({
-  baseURL: "http://localhost:8000/", // backend prefix
+  baseURL: "https://api.towndrop.in", // backend prefix
   headers: {
     "Content-Type": "application/json",
   },

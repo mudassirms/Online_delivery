@@ -1,7 +1,8 @@
 import axios from "axios";
 
+axios.defaults.withCredentials = true;
 const api = axios.create({
-  baseURL: "http://72.60.218.22:8029", 
+  baseURL: "https://api.towndrop.in",
   headers: {
     "Content-Type": "application/json",
   },

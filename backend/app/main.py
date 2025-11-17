@@ -40,10 +40,10 @@ def create_tables():
                 time.sleep(delay_seconds)
 
 
-#  Enable CORS for frontend
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # you can replace '*' with your frontend URL later
+    allow_origins=["http://34.61.29.10","https://admin.towndrop.in","https://super-admin.towndrop.in"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
