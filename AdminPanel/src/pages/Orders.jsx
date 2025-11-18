@@ -10,37 +10,41 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.tz.setDefault("Asia/Kolkata");
 
-
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 🔔 Function to play notification sound
+  // 🔔 STRONG Alarm Sound (plays 3 times)
   const playSound = () => {
     try {
-      const audio = new Audio("/sounds/new-order.mp3");
+      const audio = new Audio("/sounds/order.mp3");
+      audio.volume = 1.0;
+
+      // Play 3 times like a siren
       audio.play();
+      setTimeout(() => audio.play(), 1200);
+      setTimeout(() => audio.play(), 2400);
     } catch (err) {
       console.warn("Audio play failed:", err);
     }
   };
 
-  // 🔔 Browser push notification
+  // 🔔 Browser notification popup
   const showBrowserNotification = (count) => {
     if (!("Notification" in window)) return;
 
-    const message = `${count} new order${count > 1 ? "s" : ""} received!`;
+    const text = `${count} new order${count > 1 ? "s" : ""} received!`;
 
     if (Notification.permission === "granted") {
-      new Notification("🛒 New Order Alert", {
-        body: message,
+      new Notification("🛒 New Order Alert!", {
+        body: text,
         icon: "/favicon.ico",
       });
     } else if (Notification.permission !== "denied") {
       Notification.requestPermission().then((permission) => {
         if (permission === "granted") {
-          new Notification("🛒 New Order Alert", {
-            body: message,
+          new Notification("🛒 New Order Alert!", {
+            body: text,
             icon: "/favicon.ico",
           });
         }
@@ -48,9 +52,17 @@ export default function AdminOrders() {
     }
   };
 
-  // 🧠 Initial order fetch
+  // 📳 Phone vibration support
+  const vibratePhone = () => {
+    if ("vibrate" in navigator) {
+      navigator.vibrate([300, 200, 300]);
+    }
+  };
+
+  // 🧠 Fetch orders
   const fetchOrders = async (showLoading = true) => {
     if (showLoading) setLoading(true);
+
     try {
       const res = await api.get("/catalog/orders");
       setOrders(res.data);
@@ -61,29 +73,33 @@ export default function AdminOrders() {
     }
   };
 
-  // 🧭 Fetch once on mount
+  // Run first time
   useEffect(() => {
     fetchOrders();
   }, []);
 
-  // 🔁 Poll every 15 seconds for updates
+  // 🔁 Poll every 15 sec
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
         const res = await api.get("/catalog/orders");
         const newOrders = res.data;
 
-        // Find newly arrived orders
+        // Find only new ones
         const newOnes = newOrders.filter(
-          (o) => !orders.some((existing) => existing.id === o.id)
+          (o) => !orders.some((x) => x.id === o.id)
         );
 
         if (newOnes.length > 0) {
-          // Show notifications
+          // Trigger all notifications
           playSound();
+          vibratePhone();
           showBrowserNotification(newOnes.length);
+
           toast.success(
-            `🛒 ${newOnes.length} new order${newOnes.length > 1 ? "s" : ""} received!`,
+            `🛒 ${newOnes.length} new order${
+              newOnes.length > 1 ? "s" : ""
+            } received!`,
             { duration: 4000, position: "top-right" }
           );
         }
@@ -97,58 +113,54 @@ export default function AdminOrders() {
     return () => clearInterval(interval);
   }, [orders]);
 
-  // 🟩 Update order status
+  // Update status
   const updateStatus = async (id, status) => {
     try {
       await api.patch(`/catalog/orders/${id}`, { status });
+
       setOrders((prev) =>
         prev.map((o) => (o.id === id ? { ...o, status } : o))
       );
+
       toast.success(`Order marked as ${status}`, {
         position: "bottom-right",
       });
     } catch (e) {
-      console.warn("Failed to update status", e);
       toast.error("Failed to update order status");
     }
   };
 
-  // 🟥 Delete order
+  // Delete order
   const deleteOrder = async (id) => {
     if (!confirm("Are you sure you want to delete this order?")) return;
+
     try {
       await api.delete(`/catalog/orders/${id}`);
       setOrders((prev) => prev.filter((o) => o.id !== id));
+
       toast.success("Order deleted successfully");
     } catch (e) {
-      console.warn("Failed to delete order", e);
       toast.error("Failed to delete order");
     }
   };
 
-  // 🕒 Format timestamp
-// ⏱ Correct IST formatter
-const formatDateTime = (value) => {
-  if (!value) return "N/A";
+  // ⏱ Format date
+  const formatDateTime = (value) => {
+    if (!value) return "N/A";
 
-  try {
-    const s = String(value).trim();
+    try {
+      const s = String(value).trim();
 
-    if (/^\d+$/.test(s)) {
-      const epoch = s.length === 10 ? Number(s) * 1000 : Number(s);
-      return dayjs(epoch).format("DD MMM YYYY, hh:mm A");
+      if (/^\d+$/.test(s)) {
+        const epoch = s.length === 10 ? Number(s) * 1000 : Number(s);
+        return dayjs(epoch).format("DD MMM YYYY, hh:mm A");
+      }
+
+      return dayjs(s).format("DD MMM YYYY, hh:mm A");
+    } catch (e) {
+      return "Invalid date";
     }
-
-    return dayjs(s).format("DD MMM YYYY, hh:mm A");
-
-  } catch (e) {
-    console.warn("formatDateTime error:", value, e);
-    return "Invalid date";
-  }
-};
-
-
-
+  };
 
   if (loading)
     return (
@@ -164,9 +176,7 @@ const formatDateTime = (value) => {
     return (
       <Layout>
         <Toaster />
-        <p className="text-center text-gray-400 mt-10">
-          No orders placed yet.
-        </p>
+        <p className="text-center text-gray-400 mt-10">No orders placed yet.</p>
       </Layout>
     );
 
@@ -182,7 +192,9 @@ const formatDateTime = (value) => {
           <div
             key={order.id}
             className={`${
-              order.status === "cancelled" ? "bg-red-900/20" : "bg-gray-900"
+              order.status === "cancelled"
+                ? "bg-red-900/20"
+                : "bg-gray-900"
             } border border-gray-700 rounded-2xl p-6 shadow-lg text-gray-200`}
           >
             {/* Header */}
@@ -207,10 +219,12 @@ const formatDateTime = (value) => {
               </span>
             </div>
 
-            {/* Order Details */}
+            {/* Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4 text-gray-300">
               <div>
-                <span className="font-medium text-gray-100">Placed At: </span>
+                <span className="font-medium text-gray-100">
+                  Placed At:{" "}
+                </span>
                 {formatDateTime(order.created_at || order.createdAt)}
               </div>
               <div>
@@ -252,7 +266,7 @@ const formatDateTime = (value) => {
               </div>
             </div>
 
-            {/* Price Summary */}
+            {/* Price */}
             <div className="mb-5 text-gray-200 space-y-1">
               <div>
                 <span className="font-medium text-gray-100">Total Paid: </span>
@@ -265,37 +279,45 @@ const formatDateTime = (value) => {
                 ₹{order.store_earnings?.toFixed(2)}
               </div>
               <div>
-                <span className="font-medium text-gray-100">Delivery Fee: </span>
+                <span className="font-medium text-gray-100">
+                  Delivery Fee:{" "}
+                </span>
                 ₹{order.delivery_fee?.toFixed(2)}
               </div>
             </div>
 
             {/* Actions */}
             <div className="flex flex-wrap gap-3">
-              {order.status !== "accepted" && order.status !== "cancelled" && (
-                <button
-                  onClick={() => updateStatus(order.id, "accepted")}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition"
-                >
-                  Accept
-                </button>
-              )}
-              {order.status !== "completed" && order.status !== "cancelled" && (
-                <button
-                  onClick={() => updateStatus(order.id, "completed")}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition"
-                >
-                  Complete
-                </button>
-              )}
-              {order.status !== "rejected" && order.status !== "cancelled" && (
-                <button
-                  onClick={() => updateStatus(order.id, "rejected")}
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition"
-                >
-                  Reject
-                </button>
-              )}
+              {order.status !== "accepted" &&
+                order.status !== "cancelled" && (
+                  <button
+                    onClick={() => updateStatus(order.id, "accepted")}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition"
+                  >
+                    Accept
+                  </button>
+                )}
+
+              {order.status !== "completed" &&
+                order.status !== "cancelled" && (
+                  <button
+                    onClick={() => updateStatus(order.id, "completed")}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition"
+                  >
+                    Complete
+                  </button>
+                )}
+
+              {order.status !== "rejected" &&
+                order.status !== "cancelled" && (
+                  <button
+                    onClick={() => updateStatus(order.id, "rejected")}
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition"
+                  >
+                    Reject
+                  </button>
+                )}
+
               <button
                 onClick={() => deleteOrder(order.id)}
                 className="bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition hover:bg-gray-600"
