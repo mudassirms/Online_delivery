@@ -37,6 +37,40 @@ def create_refresh_token(data: dict):
     return jwt.encode(data, REFRESH_SECRET_KEY, algorithm=ALGORITHM)
 
 
+@router.post("/register")
+def register_user(data: schemas.RegisterUser, db: Session = Depends(database.get_db)):
+
+    # Check existing email
+    existing = db.query(models.User).filter(models.User.email == data.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    # Create hashed password
+    hashed = argon2.hash(data.password)
+
+    user = models.User(
+        name=data.name,
+        email=data.email,
+        phone=data.phone,
+        hashed_password=hashed,
+        role="user",
+        is_active=True,
+        is_verified=True,    # or False if you want email verification
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "message": "User registered successfully",
+        "user": {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "phone": user.phone,
+        }
+    }
+
 
 # ========================================================================
 # =========================== LOGIN TOKEN ================================

@@ -38,6 +38,12 @@ class UserOut(BaseModel):
     class Config:
         orm_mode = True
 
+class RegisterUser(BaseModel):
+    name: str
+    email: str
+    phone: str
+    password: str
+
 
 # -----------------------
 # Banner Schemas
