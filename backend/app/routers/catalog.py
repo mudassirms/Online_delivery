@@ -584,7 +584,7 @@ def create_order(
         raise HTTPException(status_code=404, detail="Address not found")
 
     distance_km = calculate_delivery_distance(store, address)
-    order_total = sum(item.product.price * item.quantity for item in cart_items) 
+    order_total = sum((item.product.price or 0) * (item.quantity or 0) for item in cart_items)
 
     settings = db.query(models.AppDeliverySettings).first()
     if not settings:

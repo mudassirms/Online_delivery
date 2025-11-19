@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://72.60.218.22:8029", // FastAPI backend URL
+  baseURL: "https://api.towndrop.in", // FastAPI backend URL
   headers: {
     "Content-Type": "application/json",
   },
