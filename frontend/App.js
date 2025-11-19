@@ -20,6 +20,9 @@ import CheckoutScreen from "./screens/CheckoutScreen";
 import OrdersScreen from "./screens/OrdersScreen";
 import StoresScreen from "./screens/StoresScreen";
 import ProfileScreen from "./screens/ProfileScreen";
+import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
+import VerifyOtpScreen from "./screens/VerifyOtpScreen";
+import ResetPasswordScreen from "./screens/ResetPasswordScreen";
 
 import { CartProvider, useCart } from "./context/CartContext";
 import { AuthProvider, AuthContext } from "./context/AuthContext";
@@ -160,6 +163,10 @@ function AppNavigator() {
         <>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
+          {/* 🔥 Add these 3 new screens for Password Reset */}
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen name="VerifyOtp" component={VerifyOtpScreen} />
+          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
         </>
       ) : (
         <Stack.Screen name="MainTabs" component={MainTabs} />

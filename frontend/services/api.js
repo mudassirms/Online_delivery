@@ -2,31 +2,28 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // --- Base API URL ---
-export const API_BASE = 'http://srv1065687.hstgr.cloud:8029';
+export const API_BASE = 'http://10.178.16.246:8000';
 
 // --- Axios instance ---
 const api = axios.create({
   baseURL: API_BASE,
   timeout: 10000,
+  withCredentials: true, // 🔥 allow cookies (important for refresh token)
 });
 
 // --- Request Interceptor: Attach access token ---
 api.interceptors.request.use(
   async (config) => {
-    try {
-      const token = await AsyncStorage.getItem('token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    } catch (error) {
-      console.warn('Error reading token:', error);
+    const token = await AsyncStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// --- Response Interceptor: Handle 401 and refresh token ---
+// --- Response Interceptor: Auto-refresh token on 401 ---
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -36,29 +33,24 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = await AsyncStorage.getItem('refreshToken');
-        if (!refreshToken) {
-          console.warn('No refresh token found.');
-          throw error;
-        }
+        console.log("🔄 Access token expired — refreshing...");
 
-        // Refresh access token
-        const res = await axios.post(`${API_BASE}/auth/refresh`, { token: refreshToken });
-        const newToken = res.data?.access_token;
+        // 🔥 Refresh access token (cookie sent automatically)
+        const res = await api.post('/auth/refresh');
+        const newToken = res.data.access_token;
 
-        if (!newToken) throw new Error('No access token returned from refresh endpoint.');
-
-        // Save new token
+        // Save new access token
         await AsyncStorage.setItem('token', newToken);
 
         // Retry original request
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        console.log('🔁 Token refreshed — retrying request');
         return api(originalRequest);
+
       } catch (refreshError) {
-        console.warn('Token refresh failed:', refreshError);
-        await AsyncStorage.multiRemove(['token', 'refreshToken']);
-        // Optionally navigate user to login screen here
+        console.log("🔴 Refresh token failed — user must log in again.");
+
+        await AsyncStorage.removeItem('token');
+        // Option: navigate to login screen
       }
     }
 

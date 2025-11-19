@@ -10,12 +10,7 @@ export async function login(email, password) {
   const res = await api.post('/auth/token', data, {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   });
-
-  // Save access token (and refresh token if available)
   await AsyncStorage.setItem('token', res.data.access_token);
-  if (res.data.refresh_token) {
-    await AsyncStorage.setItem('refreshToken', res.data.refresh_token);
-  }
 
   return res.data;
 }
@@ -26,19 +21,17 @@ export async function register(email, password, name, role, phone) {
     email,
     password,
     name,
-    role,  // ✅ include role
-    phone, // ✅ include phone
+    role,
+    phone,
   });
   return res.data;
 }
 
 // --- Logout ---
 export async function logout() {
-  await AsyncStorage.multiRemove(['token', 'refreshToken']);
+  await AsyncStorage.removeItem('token');
 }
-
-// --- Get Profile ---
 export async function getProfile() {
-  const res = await api.get('/auth/me'); // token automatically attached by interceptor
+  const res = await api.get('/auth/me');
   return res.data;
 }

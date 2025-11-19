@@ -28,6 +28,10 @@ class User(Base):
     verification_token = Column(String(255), nullable=True)
     stores = relationship("Store", back_populates="owner", cascade="all, delete-orphan")
 
+    # OTP Fields
+    otp = Column(String(6), nullable=True)
+    otp_expiry = Column(DateTime, nullable=True)
+
 
     # ✅ Relationships
     addresses = relationship("Address", back_populates="user")
@@ -92,6 +96,8 @@ class Product(Base):
     subcategory = relationship("ProductSubCategory", back_populates="products")
 
     available = Column(Boolean, default=True)
+    sales_count = Column(Integer, default=0)
+
 
 class ProductSubCategory(Base):
     __tablename__ = "product_subcategories"

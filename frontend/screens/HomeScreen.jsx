@@ -303,9 +303,14 @@ export default function HomeScreen({ navigation }) {
                   <TouchableOpacity
                     style={styles.cleanProductCard}
                     activeOpacity={0.9}
-                    onPress={() =>
-                      navigation.navigate("ProductDetail", { product: item })
-                    }
+                    onPress={() => {
+  if (!item.store?.is_open) {
+    Alert.alert("Store Closed", "This store is currently closed. You can browse but cannot add items to cart.");
+    return;
+  }
+  navigation.navigate("ProductDetail", { product: item });
+}}
+
                   >
                     <View>
                       {item.isNew && (

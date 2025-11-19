@@ -22,8 +22,25 @@ def get_banners(request: Request):
     ]
 
 
+from sqlalchemy import func
+
 @products_router.get("/popular", response_model=list[schemas.ProductOut])
 def get_popular_products(db: Session = Depends(database.get_db)):
-    """Return top/popular products."""
-    products = db.query(models.Product).limit(10).all()
+    """
+    Return REAL popular products:
+    - Only from OPEN stores
+    - Sorted by sales_count
+    - Limited to top 10
+    """
+
+    products = (
+        db.query(models.Product)
+        .join(models.Store)  # join store table
+        .filter(models.Store.is_closed_today == False)   # only open stores
+        .order_by(models.Product.sales_count.desc())  # highest sales first
+        .limit(10)
+        .all()
+    )
+
     return products
+

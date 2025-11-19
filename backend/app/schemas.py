@@ -2,7 +2,6 @@ from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from datetime import datetime, time
 
-
 # -----------------------
 # User Schemas
 # -----------------------
@@ -19,6 +18,16 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+class RequestReset(BaseModel):
+    email: str
+
+class VerifyOtp(BaseModel):
+    email: str
+    otp: str
+
+class ResetPassword(BaseModel):
+    email: str
+    password: str
 
 class UserOut(BaseModel):
     id: int
@@ -231,8 +240,8 @@ class OrderCreate(BaseModel):
 
 class OrderOut(BaseModel):
     id: int
-    total_price: float               # Total customer pays (products + delivery)
-    store_earnings: Optional[float] = None  # Amount going to store (products only)
+    total_price: float               
+    store_earnings: Optional[float] = None  
     user: Optional[UserOut]
     status: str
     created_at: datetime
