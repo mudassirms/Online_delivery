@@ -23,6 +23,8 @@ import ProfileScreen from "./screens/ProfileScreen";
 import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
 import VerifyOtpScreen from "./screens/VerifyOtpScreen";
 import ResetPasswordScreen from "./screens/ResetPasswordScreen";
+import VerifyEmailOtpScreen from "./screens/VerifyEmailOtpScreen";
+
 
 import { CartProvider, useCart } from "./context/CartContext";
 import { AuthProvider, AuthContext } from "./context/AuthContext";
@@ -42,6 +44,7 @@ function HomeStack() {
       <Stack.Screen name="Products" component={ProductListScreen} />
       <Stack.Screen name="ProductDetail" component={ProductDetailsScreen} />
       <Stack.Screen name="Checkout" component={CheckoutScreen} />
+
     </Stack.Navigator>
   );
 }
@@ -165,7 +168,7 @@ function AppNavigator() {
           <Stack.Screen name="Register" component={RegisterScreen} />
           {/* 🔥 Add these 3 new screens for Password Reset */}
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-          <Stack.Screen name="VerifyOtp" component={VerifyOtpScreen} />
+<Stack.Screen name="VerifyEmailOtp" component={VerifyEmailOtpScreen} />
           <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
         </>
       ) : (

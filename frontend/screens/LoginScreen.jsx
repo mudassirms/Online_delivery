@@ -10,43 +10,65 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
-import { login as apiLogin } from "../services/auth";
+import api from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 
 export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const { userToken, login } = useContext(AuthContext);
 
-  // 🔹 Redirect to MainTabs if already logged in
   useEffect(() => {
-    if (userToken) {
-      navigation.replace("MainTabs");
-    }
+    if (userToken) navigation.replace("MainTabs");
   }, [userToken]);
 
-  // 🔹 Handle Login
-  const onLogin = async () => {
-    if (!email || !password) {
-      return Alert.alert("Validation", "Please enter email and password.");
+  // STEP 1: Continue → email login OR phone OTP
+  const onContinue = async () => {
+    if (!identifier) {
+      return Alert.alert("Validation", "Enter email or phone number.");
     }
 
     setLoading(true);
     try {
-      const res = await apiLogin(email, password);
+      const res = await api.post("/auth/login", { identifier });
 
-      if (res?.token) {
-        await login(res.token, res.user);
-      } else if (res?.access_token) {
-        await login(res.access_token, res.user || null);
-      } else {
-        Alert.alert("Login failed", "Invalid response from server.");
+      // PHONE LOGIN ROUTE
+      if (res.data.next === "phone-otp") {
+        return navigation.navigate("PhoneOtp", { phone: res.data.phone });
+      }
+
+      // EMAIL LOGIN ROUTE
+      if (res.data.next === "email-login") {
+        Alert.alert("Continue", "Enter your password to login.");
       }
     } catch (error) {
-      console.log("Login error:", error);
-      Alert.alert("Login failed", "Check your credentials or register first.");
+      Alert.alert("Error", "Invalid email or phone number.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // STEP 2: Login using password (email only)
+  const onPasswordLogin = async () => {
+    if (!identifier || !password) {
+      return Alert.alert("Validation", "Enter email and password.");
+    }
+
+    setLoading(true);
+    try {
+      const response = await api.post(
+        "/auth/token",
+        `username=${identifier}&password=${password}`,
+        {
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        }
+      );
+
+      await login(response.data.access_token, response.data.user);
+    } catch (e) {
+      Alert.alert("Login failed", "Incorrect email or password.");
     } finally {
       setLoading(false);
     }
@@ -59,39 +81,40 @@ export default function LoginScreen({ navigation }) {
     >
       <Text style={styles.title}>TownDrop</Text>
 
-      <View style={styles.inputContainer}>
-        <TextInput
-          placeholder="Email ID"
-          placeholderTextColor="#888"
-          value={email}
-          onChangeText={setEmail}
-          style={styles.input}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-        <TextInput
-          placeholder="Password"
-          placeholderTextColor="#888"
-          value={password}
-          onChangeText={setPassword}
-          style={styles.input}
-          secureTextEntry
-        />
-      </View>
+      {/* Identifier (Email or Phone) */}
+      <TextInput
+        placeholder="Email or Phone"
+        placeholderTextColor="#888"
+        value={identifier}
+        onChangeText={setIdentifier}
+        style={styles.input}
+        autoCapitalize="none"
+      />
+
+      {/* Password only used for email login */}
+      <TextInput
+        placeholder="Password (for email login)"
+        placeholderTextColor="#888"
+        value={password}
+        onChangeText={setPassword}
+        style={styles.input}
+        secureTextEntry
+      />
 
       <TouchableOpacity
         style={[styles.loginButton, loading && { opacity: 0.7 }]}
-        onPress={onLogin}
+        onPress={password ? onPasswordLogin : onContinue}
         disabled={loading}
       >
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.loginText}>Login</Text>
+          <Text style={styles.loginText}>
+            {password ? "Login" : "Continue"}
+          </Text>
         )}
       </TouchableOpacity>
 
-      {/* 🔥 Forgot Password */}
       <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")}>
         <Text style={styles.forgotText}>Forgot Password?</Text>
       </TouchableOpacity>
@@ -120,9 +143,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 40,
   },
-  inputContainer: {
-    marginBottom: 24,
-  },
   input: {
     backgroundColor: "#1e1e1e",
     color: "#fff",
@@ -142,8 +162,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
   },
-
-  // 🔥 Added
   forgotText: {
     color: "#FF6B00",
     textAlign: "center",
@@ -151,13 +169,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textDecorationLine: "underline",
   },
-
-  registerContainer: {
-    marginTop: 20,
-    alignItems: "center",
-  },
-  registerText: {
-    color: "#bbb",
-    textDecorationLine: "underline",
-  },
+  registerContainer: { marginTop: 20, alignItems: "center" },
+  registerText: { color: "#bbb", textDecorationLine: "underline" },
 });

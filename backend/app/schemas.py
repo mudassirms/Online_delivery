@@ -1,6 +1,9 @@
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from datetime import datetime, time
+from pydantic import BaseModel, EmailStr, Field, validator
+import re
+
 
 # -----------------------
 # User Schemas
@@ -21,13 +24,18 @@ class UserLogin(BaseModel):
 class RequestReset(BaseModel):
     email: str
 
-class VerifyOtp(BaseModel):
-    email: str
-    otp: str
-
 class ResetPassword(BaseModel):
-    email: str
-    password: str
+    email: EmailStr
+    password: str = Field(..., min_length=6)
+
+    @validator("password")
+    def validate_password(cls, v):
+        if len(v) < 6:
+            raise ValueError("Password must be at least 6 characters")
+        if not re.search(r"[A-Za-z]", v) or not re.search(r"[0-9]", v):
+            raise ValueError("Password must contain letters and numbers")
+        return v
+
 
 class UserOut(BaseModel):
     id: int
@@ -39,10 +47,31 @@ class UserOut(BaseModel):
         orm_mode = True
 
 class RegisterUser(BaseModel):
-    name: str
-    email: str
-    phone: str
-    password: str
+    name: str = Field(..., min_length=2, max_length=50)
+    email: EmailStr
+    phone: str = Field(..., min_length=10, max_length=15)
+    password: str = Field(..., min_length=6)
+    role: str
+
+    @validator("name")
+    def validate_name(cls, v):
+        if not v.replace(" ", "").isalpha():
+            raise ValueError("Name must contain only letters")
+        return v
+
+    @validator("phone")
+    def validate_phone(cls, v):
+        if not re.fullmatch(r"[0-9]{10}", v):
+            raise ValueError("Phone must be a 10-digit number")
+        return v
+
+    @validator("password")
+    def validate_password(cls, v):
+        if len(v) < 6:
+            raise ValueError("Password must be at least 6 characters")
+        if not re.search(r"[A-Za-z]", v) or not re.search(r"[0-9]", v):
+            raise ValueError("Password must contain letters and numbers")
+        return v
 
 
 # -----------------------
@@ -289,3 +318,28 @@ class DeliverySettingsUpdate(BaseModel):
     reduce_fee_below_50: Optional[float] = None
     reduce_fee_below_100: Optional[float] = None
     free_above: Optional[float] = None
+
+
+class PhoneOtpRequest(BaseModel):
+    phone: str = Field(...)
+
+    @validator("phone")
+    def validate_phone(cls, v):
+        if not re.fullmatch(r"[0-9]{10}", v):
+            raise ValueError("Invalid phone number")
+        return v
+
+
+class PhoneOtpVerify(BaseModel):
+    phone: str
+    otp: str = Field(..., min_length=6, max_length=6)
+
+
+class VerifyOtp(BaseModel):
+    email: EmailStr
+    otp: str = Field(..., min_length=6, max_length=6)
+
+
+class UnifiedLogin(BaseModel):
+    identifier: str = Field(..., min_length=5)
+
